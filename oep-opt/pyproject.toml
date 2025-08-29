@@ -1,0 +1,16 @@
+[project]
+name = "oep-opt"
+version = "0.1.0"
+description = "OEP aux-basis s-shell optimizer (SLURM + Molpro)"
+requires-python = ">=3.9"
+dependencies = ["numpy", "scipy", "pyyaml"]
+
+[project.scripts]
+oep-opt = "oep_opt.cli:main"
+
+[build-system]
+requires = ["setuptools>=67", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[tool.setuptools]
+package-dir = {"" = "src"}
