@@ -32,6 +32,7 @@ def main(argv=None):
     p.add_argument("--w-du", type=float, default=1.0)
     p.add_argument("--w-lieb", type=float, default=1.0)
     p.add_argument("--w-norm", type=float, default=1.0)
+    p.add_argument("--w-scaled-norm", type=float, default=1.0)
 
     # SLURM
     p.add_argument("--run-sh", required=True)
@@ -64,7 +65,7 @@ def main(argv=None):
 
 
     template_text = Path(args.template).read_text()
-    weights = Weights(w_dvext=args.w_dvext, w_du=args.w_du, w_lieb=args.w_lieb, w_norm=args.w_norm)
+    weights = Weights(w_dvext=args.w_dvext, w_du=args.w_du, w_lieb=args.w_lieb, w_norm=args.w_norm, w_scaled_norm=args.w_scaled_norm)
 
     cfg = JobConfig(
         elem=args.elem, charge=args.charge, spin=args.spin,
@@ -81,7 +82,8 @@ def main(argv=None):
     logger = setup_logging(Path(rundir) / "run.log")
 
     logger.info("Starting OEP optimization for %s (mode=%s, K=%d)", cfg.elem, cfg.mode, cfg.K)
-
+    logger.info("Initial weights: w_dvext = %.3f, w_du = %.3f, w_dlieb = %.3f,w_dnorm = %.3f, w_scaled_dnorm = %.3f",
+                args.w_dvext, args.w_du, args.w_lieb, args.w_norm, args.w_scaled_norm)
     # Build x0
     if args.mode == "even_tempered":
         # Parse & clamp inputs

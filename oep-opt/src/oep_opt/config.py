@@ -8,6 +8,7 @@ class Weights:
     w_du: float = 1.0
     w_lieb: float = 1.0
     w_norm: float = 1.0
+    w_scaled_norm: float = 1.0
     penalty_noconv: float = 1e4
 
 @dataclass
