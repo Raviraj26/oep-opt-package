@@ -8,13 +8,14 @@ logger = logging.getLogger("oep-opt")
 
 
 def score_from_metrics(metrics: Dict[str, Optional[float]], weights: Weights, fail_penalty: float = 1e6) -> float:
-    dv, du, dlieb, dnorm, scaled_dnorm = (metrics.get(k) for k in ("dvext", "du", "dlieb", "dnorm", "scaled_dnorm"))
+    dv, du, dlieb, dnorm, rscaled_dnorm, sqrtrscaled_dnorm = (metrics.get(k) for k in ("dvext", "du", "dlieb", "dnorm", "rscaled_dnorm", "sqrtrscaled_dnorm"))
     terms = []
     if dv is not None:    terms.append(weights.w_dvext * abs(dv))
     if du is not None:    terms.append(weights.w_du    * abs(du))
     if dlieb is not None: terms.append(weights.w_lieb  * abs(dlieb))
     if dnorm is not None: terms.append(weights.w_norm  * abs(dnorm))
-    if scaled_dnorm is not None: terms.append(weights.w_scaled_norm  * abs(scaled_dnorm))
+    if rscaled_dnorm is not None: terms.append(weights.w_rscaled_norm  * abs(rscaled_dnorm))
+    if sqrtrscaled_dnorm is not None: terms.append(weights.w_sqrtrscaled_norm  * abs(sqrtrscaled_dnorm))
     if not terms: return fail_penalty
     sc = float(sum(terms))
     logger.info("Score components: %s", ", ".join(f"{t:.12f}" for t in terms))

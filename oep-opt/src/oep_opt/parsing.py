@@ -8,7 +8,8 @@ DEFAULT_PATTERNS: Dict[str, list[str]] = {
     "du":    [r"(?m)^\s*KSINV\s+Hartree\s+energy\s+error\s+([+-]?\d+(?:\.\d+)?(?:[Ee][+-]?\d+)?)"],
     "dlieb": [r"(?m)^\s*KSINV\s+Lieb\s+error\s+([+-]?\d+(?:\.\d+)?(?:[Ee][+-]?\d+)?)"],
     "dnorm": [r"(?im)^\s*SYMMETRIZED\s+([+-]?(?:\d+(?:\.\d*)?|\.\d+)(?:[EeDd][+-]?\d+)?)"],
-    "scaled_dnorm": [r"(?im)^\s*SCALED_SYMMETRIZED\s+([+-]?(?:\d+(?:\.\d*)?|\.\d+)(?:[EeDd][+-]?\d+)?)"],
+    "rscaled_dnorm": [r"(?im)^\s*R_SCALED_SYMMETRIZED\s+([+-]?(?:\d+(?:\.\d*)?|\.\d+)(?:[EeDd][+-]?\d+)?)"],
+    "sqrtrscaled_dnorm": [r"(?im)^\s*SQRTR_SCALED_SYMMETRIZED\s+([+-]?(?:\d+(?:\.\d*)?|\.\d+)(?:[EeDd][+-]?\d+)?)"],
     "converged": [r"(?im)^\s*SCF\s+Converged\s"],
     "not_converged": [r"(?im)^\s*SCF\s+NOT\s+Converged\s"],
 }
@@ -33,8 +34,9 @@ def parse_metrics(out_text: str) -> Dict[str, Optional[float]]:
     du    = _first_float(out_text, DEFAULT_PATTERNS["du"])
     dlieb = _first_float(out_text, DEFAULT_PATTERNS["dlieb"])
     dnorm = _first_float(out_text, DEFAULT_PATTERNS["dnorm"])
-    scaled_dnorm = _first_float(out_text, DEFAULT_PATTERNS["scaled_dnorm"])
+    rscaled_dnorm = _first_float(out_text, DEFAULT_PATTERNS["rscaled_dnorm"])
+    sqrtrscaled_dnorm = _first_float(out_text, DEFAULT_PATTERNS["sqrtrscaled_dnorm"])
     conv  = _detect_conv(out_text, DEFAULT_PATTERNS["converged"], DEFAULT_PATTERNS["not_converged"])
-    logger.info("Parsed metrics: dvext=%s, du=%s, dlieb=%s, dnorm= %s, scaled_dnorm=%s, converged=%s", dvext, du, dlieb, dnorm, scaled_dnorm, conv)
+    logger.info("Parsed metrics: dvext=%s, du=%s, dlieb=%s, dnorm= %s, rscaled_dnorm=%s, sqrtrscaled_dnorm=%s, converged=%s", dvext, du, dlieb, dnorm, rscaled_dnorm, sqrtrscaled_dnorm, conv)
     #print(f"[DEBUG] Parsed metrics: dvext={dvext}, du={du}, dlieb={dlieb}, dnorm={dnorm}, converged={conv}")
-    return {"dvext": dvext, "du": du, "dlieb": dlieb, "dnorm": dnorm, "scaled_dnorm": scaled_dnorm,"converged": conv}
+    return {"dvext": dvext, "du": du, "dlieb": dlieb, "dnorm": dnorm, "rscaled_dnorm": rscaled_dnorm, "sqrtrscaled_dnorm": sqrtrscaled_dnorm, "converged": conv}
