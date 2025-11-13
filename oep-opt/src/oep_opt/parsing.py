@@ -10,6 +10,7 @@ DEFAULT_PATTERNS: Dict[str, list[str]] = {
     "dnorm": [r"(?im)^\s*SYMMETRIZED\s+([+-]?(?:\d+(?:\.\d*)?|\.\d+)(?:[EeDd][+-]?\d+)?)"],
     "rscaled_dnorm": [r"(?im)^\s*R_SCALED_SYMMETRIZED\s+([+-]?(?:\d+(?:\.\d*)?|\.\d+)(?:[EeDd][+-]?\d+)?)"],
     "sqrtrscaled_dnorm": [r"(?im)^\s*SQRTR_SCALED_SYMMETRIZED\s+([+-]?(?:\d+(?:\.\d*)?|\.\d+)(?:[EeDd][+-]?\d+)?)"],
+    "rtimes_scaled_dnorm": [r"(?im)^\s*Rtimes_SCALED_SYMMETRIZED\s+([+-]?(?:\d+(?:\.\d*)?|\.\d+)(?:[EeDd][+-]?\d+)?)"],
     "converged": [r"(?im)^\s*SCF\s+Converged\s"],
     "not_converged": [r"(?im)^\s*SCF\s+NOT\s+Converged\s"],
 }
@@ -36,7 +37,8 @@ def parse_metrics(out_text: str) -> Dict[str, Optional[float]]:
     dnorm = _first_float(out_text, DEFAULT_PATTERNS["dnorm"])
     rscaled_dnorm = _first_float(out_text, DEFAULT_PATTERNS["rscaled_dnorm"])
     sqrtrscaled_dnorm = _first_float(out_text, DEFAULT_PATTERNS["sqrtrscaled_dnorm"])
+    rtimes_scaled_dnorm = _first_float(out_text, DEFAULT_PATTERNS["rtimes_scaled_dnorm"])
     conv  = _detect_conv(out_text, DEFAULT_PATTERNS["converged"], DEFAULT_PATTERNS["not_converged"])
-    logger.info("Parsed metrics: dvext=%s, du=%s, dlieb=%s, dnorm= %s, rscaled_dnorm=%s, sqrtrscaled_dnorm=%s, converged=%s", dvext, du, dlieb, dnorm, rscaled_dnorm, sqrtrscaled_dnorm, conv)
+    logger.info("Parsed metrics: dvext=%s, du=%s, dlieb=%s, dnorm= %s, rscaled_dnorm=%s, sqrtrscaled_dnorm=%s, rtimes_scaled_dnorm=%s, converged=%s", dvext, du, dlieb, dnorm, rscaled_dnorm, sqrtrscaled_dnorm, rtimes_scaled_dnorm, conv)
     #print(f"[DEBUG] Parsed metrics: dvext={dvext}, du={du}, dlieb={dlieb}, dnorm={dnorm}, converged={conv}")
-    return {"dvext": dvext, "du": du, "dlieb": dlieb, "dnorm": dnorm, "rscaled_dnorm": rscaled_dnorm, "sqrtrscaled_dnorm": sqrtrscaled_dnorm, "converged": conv}
+    return {"dvext": dvext, "du": du, "dlieb": dlieb, "dnorm": dnorm, "rscaled_dnorm": rscaled_dnorm, "sqrtrscaled_dnorm": sqrtrscaled_dnorm,"rtimes_scaled_dnorm": rtimes_scaled_dnorm, "converged": conv}

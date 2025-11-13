@@ -9,8 +9,9 @@ class Weights:
     w_lieb: float = 1.0
     w_norm: float = 1.0
     w_rscaled_norm: float = 1.0
+    w_rtimes_scaled_norm: float = 1.0
     w_sqrtrscaled_norm: float = 1.0
-    penalty_noconv: float = 1e4
+    penalty_noconv: float = 0.0
 
 @dataclass
 class JobConfig:

@@ -8,7 +8,7 @@ logger = logging.getLogger("oep-opt")
 
 
 def score_from_metrics(metrics: Dict[str, Optional[float]], weights: Weights, fail_penalty: float = 1e6) -> float:
-    dv, du, dlieb, dnorm, rscaled_dnorm, sqrtrscaled_dnorm = (metrics.get(k) for k in ("dvext", "du", "dlieb", "dnorm", "rscaled_dnorm", "sqrtrscaled_dnorm"))
+    dv, du, dlieb, dnorm, rscaled_dnorm, sqrtrscaled_dnorm, rtimes_scaled_dnorm = (metrics.get(k) for k in ("dvext", "du", "dlieb", "dnorm", "rscaled_dnorm", "sqrtrscaled_dnorm", "rtimes_scaled_dnorm"))
     terms = []
     if dv is not None:    terms.append(weights.w_dvext * abs(dv))
     if du is not None:    terms.append(weights.w_du    * abs(du))
@@ -16,12 +16,13 @@ def score_from_metrics(metrics: Dict[str, Optional[float]], weights: Weights, fa
     if dnorm is not None: terms.append(weights.w_norm  * abs(dnorm))
     if rscaled_dnorm is not None: terms.append(weights.w_rscaled_norm  * abs(rscaled_dnorm))
     if sqrtrscaled_dnorm is not None: terms.append(weights.w_sqrtrscaled_norm  * abs(sqrtrscaled_dnorm))
+    if rtimes_scaled_dnorm is not None: terms.append(weights.w_rtimes_scaled_norm  * abs(rtimes_scaled_dnorm))
     if not terms: return fail_penalty
     sc = float(sum(terms))
-    logger.info("Score components: %s", ", ".join(f"{t:.12f}" for t in terms))
-    logger.info("Total score: %.12f", sc)
     conv = metrics.get("converged")
     if conv is False: sc += weights.penalty_noconv
     elif conv is None: sc += 0.1 * weights.penalty_noconv
     if not np.isfinite(sc): return fail_penalty
+    logger.info("Score components: %s", ", ".join(f"{t:.12f}" for t in terms))
+    logger.info("Total score: %.12f", sc)
     return sc
