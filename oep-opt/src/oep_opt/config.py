@@ -14,6 +14,26 @@ class Weights:
     penalty_noconv: float = 0.0
 
 @dataclass
+class S_ovrlp_penalty:
+    expo: float = 7.0
+    coeff: float = 1e-4
+    knob: bool = False
+
+@dataclass
+class A_coupling_penalty:
+    expo: float = 2.0
+    coeff: float = 1e-4
+    knob: bool = False
+
+
+@dataclass
+class Redundancy_penalty:
+    a: float = 1.1
+    b: float = 10.0
+    c: float = 1e-3
+    knob: bool = False
+
+@dataclass
 class JobConfig:
     # chemical/system
     elem: str = "O"
@@ -33,10 +53,14 @@ class JobConfig:
     mode: str = "free_exponents"  # or "even_tempered"
     K: int = 8
     weights: Weights = field(default_factory=Weights)
+    s_ovrlp_penalty: S_ovrlp_penalty = field(default_factory=S_ovrlp_penalty)
+    a_coupling_penalty: A_coupling_penalty = field(default_factory=A_coupling_penalty)
+    redundancy_penalty: Redundancy_penalty = field(default_factory=Redundancy_penalty)
     sbatch_cmd: str = "sbatch"
     poll_s: int = 20
     max_wait_s: int = 0
     exp_min: float = 1e-6
     exp_max: float = 1e6
     order_penalty: float = 0.0
+
 

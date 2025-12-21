@@ -7,10 +7,14 @@ import sys
 import logging
 
 from .logging_setup import setup_logging
-from .config import JobConfig, Weights
+from .config import JobConfig, Weights, S_ovrlp_penalty, Redundancy_penalty, A_coupling_penalty
 from .workflow import objective, exps_from_theta
 from .parameterizations import ensure_descending
 from .utils import read_exps_from_file
+
+def str2bool(x):
+    return x.lower() in ("yes","true","t","1","y")
+
 
 def main(argv=None):
     p = argparse.ArgumentParser(description="Optimize OEP aux s-exponents (even-tempered or free) using SLURM run.sh per trial.")
@@ -35,6 +39,20 @@ def main(argv=None):
     p.add_argument("--w-rscaled-norm", type=float, default=1.0)
     p.add_argument("--w-sqrtrscaled-norm", type=float, default=1.0)
     p.add_argument("--w-rtimes-scaled-norm", type=float, default=1.0)
+    
+    ## S_overlap_penalty
+    p.add_argument("--s_ovrlp_penalty_expo", type = float, default = 9.0)
+    p.add_argument("--s_ovrlp_penalty_coeff", type = float, default = 1e-3)
+    p.add_argument("--knob_for_s_ovrlp_penalty", type = str2bool, default = False)
+
+    p.add_argument("--a_coupling_penalty_expo", type = float, default = 2.0)
+    p.add_argument("--a_coupling_penalty_coeff", type = float, default = 1e-4)
+    p.add_argument("--knob_for_a_coupling_penalty", type = str2bool, default = False)
+    ## Redundancy Penalty for s exponents
+    p.add_argument("--redundancy_penalty_coeff_a", type = float, default = 1.1)
+    p.add_argument("--redundancy_penalty_coeff_b", type = float, default = 10.0)
+    p.add_argument("--redundancy_penalty_coeff_c", type = float, default = 1e-3)
+    p.add_argument("--redundancy_penalty_knob", type=str2bool, default = False)
 
 
     # SLURM
@@ -69,14 +87,17 @@ def main(argv=None):
 
     template_text = Path(args.template).read_text()
     weights = Weights(w_dvext=args.w_dvext, w_du=args.w_du, w_lieb=args.w_lieb, w_norm=args.w_norm, w_rscaled_norm=args.w_rscaled_norm, w_sqrtrscaled_norm=args.w_sqrtrscaled_norm, w_rtimes_scaled_norm=args.w_rtimes_scaled_norm)
-
+    s_ovrlp_penalty = S_ovrlp_penalty(coeff=args.s_ovrlp_penalty_coeff, expo = args.s_ovrlp_penalty_expo, knob = args.knob_for_s_ovrlp_penalty)
+    a_coupling_penalty = A_coupling_penalty(coeff = args.a_coupling_penalty_coeff, expo = args.a_coupling_penalty_expo, knob = args.knob_for_a_coupling_penalty)
+    
+    redundancy_penalty = Redundancy_penalty(a = args.redundancy_penalty_coeff_a, b = args.redundancy_penalty_coeff_b, c = args.redundancy_penalty_coeff_c, knob = args.redundancy_penalty_knob)
     cfg = JobConfig(
         elem=args.elem, charge=args.charge, spin=args.spin,
         orbital_parent=args.orbital_parent, aux_parent=args.aux_parent,
         dm_file=args.dm_file, e_ref=args.e_ref,
         template_text=template_text, workroot=Path(args.workdir), run_sh_path=Path(args.run_sh),
-        mode=args.mode, K=args.K, weights=weights,
-        sbatch_cmd=args.sbatch_cmd, poll_s=args.poll_s, max_wait_s=args.max_wait_s,
+        mode=args.mode, K=args.K, weights=weights, s_ovrlp_penalty=s_ovrlp_penalty,redundancy_penalty=redundancy_penalty,
+        a_coupling_penalty = a_coupling_penalty, sbatch_cmd=args.sbatch_cmd, poll_s=args.poll_s, max_wait_s=args.max_wait_s,
         exp_min=1e-6, exp_max=1e6, order_penalty=float(args.order_penalty),
     )
 
@@ -87,6 +108,9 @@ def main(argv=None):
     logger.info("Starting OEP optimization for %s (mode=%s, K=%d)", cfg.elem, cfg.mode, cfg.K)
     logger.info("Minimization parameters: method=%s, maxiter=%d, gtol=%.3e, eps=%.3e",
                 args.method, args.maxiter, args.gtol, args.eps)
+    logger.info("S_overlap penalty parameters expo=%s, coeff=%s, knob=%s", s_ovrlp_penalty.expo, s_ovrlp_penalty.coeff, s_ovrlp_penalty.knob)
+    logger.info("A_coupling penalty parameters expo=%s, coeff=%s, knob=%s", a_coupling_penalty.expo, a_coupling_penalty.coeff, a_coupling_penalty.knob)
+    logger.info("Redundancy penalty parameters a=%s,b=%s,c=%s, knob=%s",redundancy_penalty.a, redundancy_penalty.b, redundancy_penalty.c, redundancy_penalty.knob)
     logger.info("Initial weights: w_dvext = %.3f, w_du = %.3f, w_dlieb = %.3f,w_dnorm = %.3f, w_rscaled_dnorm = %.3f, w_sqrtrscaled_norm = %.3f, w_rtimes_scaled_norm = %.3f",
                 args.w_dvext, args.w_du, args.w_lieb, args.w_norm, args.w_rscaled_norm, args.w_sqrtrscaled_norm, args.w_rtimes_scaled_norm)
     # Build x0

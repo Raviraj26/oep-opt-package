@@ -75,13 +75,13 @@ def objective(theta: np.ndarray, cfg: JobConfig) -> float:
                                         max_wait_s=cfg.max_wait_s)
 
     metrics = parse_metrics(out_text)
-    sc = score_from_metrics(metrics, cfg.weights)
-
+    sc = score_from_metrics(exps_desc ,metrics, cfg.weights, cfg.s_ovrlp_penalty,cfg.redundancy_penalty, cfg.a_coupling_penalty)
+    
     if cfg.order_penalty > 0.0:
         for i in range(1, len(exps_desc)):
             if exps_desc[i] >= exps_desc[i - 1]:
                 sc += cfg.order_penalty
-
+    logger.info("The score which is considered is %s", sc)
     with open(rundir / "metrics.json", "w") as f:
         json.dump(
             {"mode": cfg.mode, "theta": list(map(float, theta)), "exponents": exps_desc,
