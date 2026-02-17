@@ -11,6 +11,7 @@ from .config import JobConfig, Weights, S_ovrlp_penalty, Redundancy_penalty, A_c
 from .workflow import objective, exps_from_theta
 from .parameterizations import ensure_descending
 from .utils import read_exps_from_file
+from .concurrency import Evaluator, jac_central_parallel, jac_forward_parallel
 
 def str2bool(x):
     return x.lower() in ("yes","true","t","1","y")
@@ -37,6 +38,7 @@ def main(argv=None):
     p.add_argument("--w-lieb", type=float, default=1.0)
     p.add_argument("--w-norm", type=float, default=1.0)
     p.add_argument("--w-rscaled-norm", type=float, default=1.0)
+    p.add_argument("--w-rsqr-scaled-norm", type=float, default=1.0)
     p.add_argument("--w-sqrtrscaled-norm", type=float, default=1.0)
     p.add_argument("--w-rtimes-scaled-norm", type=float, default=1.0)
     
@@ -79,14 +81,18 @@ def main(argv=None):
     p.add_argument("--maxiter", type=int, default=120)
     p.add_argument("--gtol", type=float, default=1e-6)
     p.add_argument("--eps", type=float, default=1e-3)
-
-    p.add_argument("command", choices=["optimize"], nargs="?", default="optimize")
+    p.add_argument("--parallel_eval", type=str2bool, default=False)
+    p.add_argument("--parallel_eval_workers", type=int, default=4)
+    p.add_argument("--parallel_eval_method", choices=["central", "forward"], default="central")
+    #p.add_argument("command", choices=["optimize"], nargs="?", default="optimize")
     args = p.parse_args(argv)
 
 
 
     template_text = Path(args.template).read_text()
-    weights = Weights(w_dvext=args.w_dvext, w_du=args.w_du, w_lieb=args.w_lieb, w_norm=args.w_norm, w_rscaled_norm=args.w_rscaled_norm, w_sqrtrscaled_norm=args.w_sqrtrscaled_norm, w_rtimes_scaled_norm=args.w_rtimes_scaled_norm)
+    weights = Weights(w_dvext=args.w_dvext, w_du=args.w_du, w_lieb=args.w_lieb, w_norm=args.w_norm,
+                      w_rscaled_norm=args.w_rscaled_norm, w_sqrtrscaled_norm=args.w_sqrtrscaled_norm,
+                      w_rtimes_scaled_norm=args.w_rtimes_scaled_norm, w_rsqr_scaled_norm= args.w_rsqr_scaled_norm)
     s_ovrlp_penalty = S_ovrlp_penalty(coeff=args.s_ovrlp_penalty_coeff, expo = args.s_ovrlp_penalty_expo, knob = args.knob_for_s_ovrlp_penalty)
     a_coupling_penalty = A_coupling_penalty(coeff = args.a_coupling_penalty_coeff, expo = args.a_coupling_penalty_expo, knob = args.knob_for_a_coupling_penalty)
     
@@ -98,12 +104,14 @@ def main(argv=None):
         template_text=template_text, workroot=Path(args.workdir), run_sh_path=Path(args.run_sh),
         mode=args.mode, K=args.K, weights=weights, s_ovrlp_penalty=s_ovrlp_penalty,redundancy_penalty=redundancy_penalty,
         a_coupling_penalty = a_coupling_penalty, sbatch_cmd=args.sbatch_cmd, poll_s=args.poll_s, max_wait_s=args.max_wait_s,
-        exp_min=1e-6, exp_max=1e6, order_penalty=float(args.order_penalty),
+        exp_min=1e-6, exp_max=1e6, order_penalty=float(args.order_penalty), logging=True
     )
 
     rundir = cfg.workroot
     rundir.mkdir(parents=True, exist_ok=True)
-    logger = setup_logging(Path(rundir) / "run.log")
+#    logger = setup_logging(Path(rundir) / "run.log")
+    logger = setup_logging(run_logfile=Path(rundir) / "run.log", grad_logfile=Path(rundir) / "grad.log",)
+
 
     logger.info("Starting OEP optimization for %s (mode=%s, K=%d)", cfg.elem, cfg.mode, cfg.K)
     logger.info("Minimization parameters: method=%s, maxiter=%d, gtol=%.3e, eps=%.3e",
@@ -111,8 +119,8 @@ def main(argv=None):
     logger.info("S_overlap penalty parameters expo=%s, coeff=%s, knob=%s", s_ovrlp_penalty.expo, s_ovrlp_penalty.coeff, s_ovrlp_penalty.knob)
     logger.info("A_coupling penalty parameters expo=%s, coeff=%s, knob=%s", a_coupling_penalty.expo, a_coupling_penalty.coeff, a_coupling_penalty.knob)
     logger.info("Redundancy penalty parameters a=%s,b=%s,c=%s, knob=%s",redundancy_penalty.a, redundancy_penalty.b, redundancy_penalty.c, redundancy_penalty.knob)
-    logger.info("Initial weights: w_dvext = %.3f, w_du = %.3f, w_dlieb = %.3f,w_dnorm = %.3f, w_rscaled_dnorm = %.3f, w_sqrtrscaled_norm = %.3f, w_rtimes_scaled_norm = %.3f",
-                args.w_dvext, args.w_du, args.w_lieb, args.w_norm, args.w_rscaled_norm, args.w_sqrtrscaled_norm, args.w_rtimes_scaled_norm)
+    logger.info("Initial weights: w_dvext = %.3f, w_du = %.3f, w_dlieb = %.3f,w_dnorm = %.3f, w_rscaled_dnorm = %.3f, w_sqrtrscaled_norm = %.3f, w_rtimes_scaled_norm = %.3f, w_rsqr_scaled_norm = %.3f", 
+                args.w_dvext, args.w_du, args.w_lieb, args.w_norm, args.w_rscaled_norm, args.w_sqrtrscaled_norm, args.w_rtimes_scaled_norm, args.w_rsqr_scaled_norm)
     # Build x0
     if args.mode == "even_tempered":
         # Parse & clamp inputs
@@ -156,12 +164,35 @@ def main(argv=None):
         #print(f"[INFO] Initial seed exponents: {', '.join(f'{e:.4g}' for e in seed)}")
     #sys.stdout.flush()
     # Optimize
-    res = minimize(
-        fun=objective, x0=x0, args=(cfg,), method=args.method,
-        options={"maxiter": args.maxiter, "disp": True, "gtol": args.gtol, "eps": args.eps}
-        if args.method in {"BFGS", "CG", "Newton-CG", "L-BFGS-B", "TNC"}
-        else {"maxiter": args.maxiter, "disp": True}
-    )
+    if args.parallel_eval:
+        logger.info("Using parallel evaluation with %d workers, method=%s", args.parallel_eval_workers, args.parallel_eval_method)
+        evaluator = Evaluator(cfg, max_workers=args.parallel_eval_workers)   # or a CLI arg like --fd-par
+
+        def fun_wrapped(t):
+            return evaluator.eval_one(t,  phase="log")
+
+        def jac_wrapped(t):
+            if args.parallel_eval_method == "forward":
+                return jac_forward_parallel(t, evaluator, eps=args.eps)
+            elif args.parallel_eval_method == "central":
+                return jac_central_parallel(t, evaluator, eps=args.eps)
+
+        res = minimize(
+            fun=fun_wrapped,
+            x0=x0,
+            method="BFGS",
+            jac=jac_wrapped,
+            options={"maxiter": args.maxiter, "disp": True, "gtol": args.gtol, "eps": args.eps}
+            if args.method in {"BFGS", "CG", "Newton-CG", "L-BFGS-B", "TNC"}
+            else {"maxiter": args.maxiter, "disp": True}
+            )
+    else:
+        res = minimize(
+                    fun=objective, x0=x0, args=(cfg,), method=args.method,
+                    options={"maxiter": args.maxiter, "disp": True, "gtol": args.gtol, "eps": args.eps}
+                    if args.method in {"BFGS", "CG", "Newton-CG", "L-BFGS-B", "TNC"}
+                    else {"maxiter": args.maxiter, "disp": True}
+        )
     
     logger.info("=== Optimization result ===\n%s", res)
 

@@ -1,10 +1,15 @@
 import argparse, hashlib, json, re
 from pathlib import Path
 from typing import List
+import numpy as np
 
-def stable_tag_from_theta(theta) -> str:
-    tag_bytes = json.dumps(list(map(float, theta))).encode("utf-8")
-    return hashlib.sha1(tag_bytes).hexdigest()[:10]
+#def stable_tag_from_theta(theta) -> str:
+#    tag_bytes = json.dumps(list(map(float, theta))).encode("utf-8")
+#    return hashlib.sha1(tag_bytes).hexdigest()[:10]
+
+def stable_tag_from_theta(theta: np.ndarray) -> str:
+    t = np.asarray(theta, dtype=np.float64)
+    return hashlib.sha1(t.tobytes()).hexdigest()[:10]
 
 def parse_init_exps_str(s: str) -> List[float]:
     toks = [t.strip() for t in re.split(r"[ ,]+", s.strip()) if t.strip()]

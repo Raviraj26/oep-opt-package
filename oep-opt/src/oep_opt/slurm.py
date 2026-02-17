@@ -2,6 +2,10 @@
 from pathlib import Path
 import os, re, shutil, subprocess, time
 from typing import Tuple
+import logging
+
+grad_logger = logging.getLogger("oep-opt.grad")
+
 
 def submit_slurm_and_wait(run_dir: Path, sbatch_cmd: str, poll_s: int = 20,
                           max_wait_s: int = 0,
@@ -29,29 +33,51 @@ def submit_slurm_and_wait(run_dir: Path, sbatch_cmd: str, poll_s: int = 20,
         proc = subprocess.run(sbatch_cmd.split() + ["run.sh"], cwd=str(run_dir),
                               capture_output=True, text=True, check=False)
         sb_out = (proc.stdout or "") + "\n" + (proc.stderr or "")
-        m = re.search(r"Submitted batch job\s+(\d+)", sb_out) or re.search(r"(\d+)", sb_out)
-        job_id = m.group(1) if m else "UNKNOWN"
-        marker.write_text(str(job_id))
-
-    start = time.time()
-    while True:
-        if out_file.exists():
-            try:
-                txt = out_file.read_text(errors="ignore")
-                if sentinel in txt:
+        if sbatch_cmd.strip() == "bash":
+        # synchronous run; no job id
+            job_id = "LOCAL_SYNC"
+            marker.write_text(str(job_id))
+            while True:
+                if out_file.exists():
+                    txt = out_file.read_text(errors="ignore")
+                    if sentinel in txt:
+                        break
+                    else:
+                        proc = subprocess.run(sbatch_cmd.split() + ["run.sh"], cwd=str(run_dir),
+                                               capture_output=True, text=True, check=False)
+                        sb_out = (proc.stdout or "") + "\n" + (proc.stderr or "")
+                        grad_logger.info("Re-running local command because sentinel not found in output -> %s", run_dir.name)
+                else:
+                    proc = subprocess.run(sbatch_cmd.split() + ["run.sh"], cwd=str(run_dir),
+                                           capture_output=True, text=True, check=False)
+                    sb_out = (proc.stdout or "") + "\n" + (proc.stderr or "")
+                    grad_logger.info("Re-running local command because output file not found-> %s", run_dir.name)
+        else:
+            m = re.search(r"Submitted batch job\s+(\d+)", sb_out) or re.search(r"(\d+)", sb_out)
+            job_id = m.group(1) if m else "UNKNOWN"
+            marker.write_text(str(job_id))
+    #print(job_id)
+    if sbatch_cmd.strip() == "sbatch":
+        start = time.time()
+        while True:
+            if out_file.exists():
+                try:
+                    txt = out_file.read_text(errors="ignore")
+                    if sentinel in txt:
+                        time.sleep(5)
+                        break
+                except Exception:
+                    pass
+            if str(job_id).isdigit():
+                q = subprocess.run(["squeue", "-j", str(job_id), "-h"],
+                                   cwd=str(run_dir), capture_output=True, text=True)
+                if q.returncode == 0 and q.stdout.strip() == "":
                     time.sleep(5)
                     break
-            except Exception:
-                pass
-        if job_id != "UNKNOWN":
-            q = subprocess.run(["squeue", "-j", str(job_id), "-h"],
-                               cwd=str(run_dir), capture_output=True, text=True)
-            if q.returncode == 0 and q.stdout.strip() == "":
-                time.sleep(5)
-                break
-        if max_wait_s > 0 and (time.time() - start) > max_wait_s:
-            return (998, f"TIMEOUT_WAITING_FOR_SLURM (job {job_id})")
-        time.sleep(poll_s)
+            if max_wait_s > 0 and (time.time() - start) > max_wait_s:
+                return (998, f"TIMEOUT_WAITING_FOR_SLURM (job {job_id})")
+            time.sleep(poll_s)
+            print("still polling")
 
     out_text = ""
     end_wait_start = time.time()

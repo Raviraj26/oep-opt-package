@@ -11,6 +11,7 @@ class Weights:
     w_rscaled_norm: float = 1.0
     w_rtimes_scaled_norm: float = 1.0
     w_sqrtrscaled_norm: float = 1.0
+    w_rsqr_scaled_norm: float = 1.0
     penalty_noconv: float = 0.0
 
 @dataclass
@@ -62,5 +63,5 @@ class JobConfig:
     exp_min: float = 1e-6
     exp_max: float = 1e6
     order_penalty: float = 0.0
-
+    logging: bool = True
 

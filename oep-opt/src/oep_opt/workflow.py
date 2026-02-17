@@ -6,6 +6,7 @@ from typing import List
 import logging
 logger = logging.getLogger("oep-opt")
 
+grad_logger = logging.getLogger("oep-opt.grad")
 
 
 from .config import JobConfig
@@ -23,11 +24,11 @@ def exps_from_theta(theta: np.ndarray, cfg: JobConfig) -> List[float]:
         return free_exponents_from_params(theta, cfg.K, cfg.exp_min, cfg.exp_max)
     raise ValueError(f"Unknown mode: {cfg.mode}")
 
-def objective(theta: np.ndarray, cfg: JobConfig) -> float:
+def objective(theta: np.ndarray, cfg: JobConfig, phase = "log") -> float:
     tag = stable_tag_from_theta(theta)
     rundir = cfg.workroot / f"run_{cfg.elem}_{cfg.mode}_{tag}"
     rundir.mkdir(parents=True, exist_ok=True)
-
+    logger_file = logger if phase == "log" else grad_logger
     #dm_src = Path(cfg.dm_file)
     #if dm_src.exists():
     #    tgt = rundir / dm_src.name
@@ -48,9 +49,9 @@ def objective(theta: np.ndarray, cfg: JobConfig) -> float:
 #        print(f"[TRY] {cfg.elem}: mode={cfg.mode}, K={cfg.K}, exps[0]={exps_desc[0]:.3f} -> {rundir.name}")
 #    except Exception:
 #        print(f"[TRY] {cfg.elem}: mode={cfg.mode}, K={cfg.K} -> {rundir.name}")
-
+    
     try:
-        logger.info(
+        logger_file.info(
             " %s: mode=%s, K=%d: %s -> %s",
             cfg.elem,
             cfg.mode,
@@ -59,7 +60,7 @@ def objective(theta: np.ndarray, cfg: JobConfig) -> float:
             rundir.name,
         )
     except Exception:
-        logger.info(
+        logger_file.info(
             " %s: mode=%s, K=%d -> %s",
             cfg.elem,
             cfg.mode,
@@ -74,14 +75,15 @@ def objective(theta: np.ndarray, cfg: JobConfig) -> float:
                                         poll_s=cfg.poll_s,
                                         max_wait_s=cfg.max_wait_s)
 
-    metrics = parse_metrics(out_text)
-    sc = score_from_metrics(exps_desc ,metrics, cfg.weights, cfg.s_ovrlp_penalty,cfg.redundancy_penalty, cfg.a_coupling_penalty)
+    metrics = parse_metrics(out_text, phase=phase)
+    sc = score_from_metrics(exps_desc ,metrics, cfg.weights, cfg.s_ovrlp_penalty,cfg.redundancy_penalty, cfg.a_coupling_penalty,phase=phase)
     
     if cfg.order_penalty > 0.0:
         for i in range(1, len(exps_desc)):
             if exps_desc[i] >= exps_desc[i - 1]:
                 sc += cfg.order_penalty
-    logger.info("The score which is considered is %s", sc)
+    if phase == "log":
+        logger_file.info("The score which is considered is %s", sc)
     with open(rundir / "metrics.json", "w") as f:
         json.dump(
             {"mode": cfg.mode, "theta": list(map(float, theta)), "exponents": exps_desc,

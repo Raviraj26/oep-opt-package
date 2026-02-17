@@ -1,7 +1,8 @@
 import re
 from typing import Dict, Iterable, Optional, Sequence, List
 import logging
-logger = logging.getLogger("oep-opt")
+#logger = logging.getLogger("oep-opt")
+
 
 DEFAULT_PATTERNS: Dict[str, list[str]] = {
     "dvext": [r"(?m)^\s*KSINV\s+External\s+energy\s+error\s+([+-]?\d+(?:\.\d+)?(?:[Ee][+-]?\d+)?)"],
@@ -11,6 +12,7 @@ DEFAULT_PATTERNS: Dict[str, list[str]] = {
     "rscaled_dnorm": [r"(?im)^\s*R_SCALED_SYMMETRIZED\s+([+-]?(?:\d+(?:\.\d*)?|\.\d+)(?:[EeDd][+-]?\d+)?)"],
     "sqrtrscaled_dnorm": [r"(?im)^\s*SQRTR_SCALED_SYMMETRIZED\s+([+-]?(?:\d+(?:\.\d*)?|\.\d+)(?:[EeDd][+-]?\d+)?)"],
     "rtimes_scaled_dnorm": [r"(?im)^\s*Rtimes_SCALED_SYMMETRIZED\s+([+-]?(?:\d+(?:\.\d*)?|\.\d+)(?:[EeDd][+-]?\d+)?)"],
+    "rsqr_scaled_dnorm": [r"(?im)^\s*RSQR_SCALED_SYMMETRIZED\s+([+-]?(?:\d+(?:\.\d*)?|\.\d+)(?:[EeDd][+-]?\d+)?)"],
     "converged": [r"(?im)^\s*SCF\s+Converged\s"],
     "not_converged": [r"(?im)^\s*SCF\s+NOT\s+Converged\s"],
     "s_ovrlp": [r"(?is)Eigenvalues of S\^I-matrix.*?\n[-\s]*\n\s*1\s+(?:\s*)?([+-]?(?:\d+(?:\.\d*)?|\.\d+)(?:[EeDd][+-]?\d+)?)"],
@@ -61,7 +63,7 @@ def parse_last_first_eigA_from_lines(out_text: str, patterns: Iterable[str]) -> 
     return last_val
 
 
-def parse_metrics(out_text: str) -> Dict[str, Optional[float]]:
+def parse_metrics(out_text: str, phase = "log") -> Dict[str, Optional[float]]:
     dvext = _first_float(out_text, DEFAULT_PATTERNS["dvext"])
     du    = _first_float(out_text, DEFAULT_PATTERNS["du"])
     dlieb = _first_float(out_text, DEFAULT_PATTERNS["dlieb"])
@@ -69,14 +71,19 @@ def parse_metrics(out_text: str) -> Dict[str, Optional[float]]:
     rscaled_dnorm = _first_float(out_text, DEFAULT_PATTERNS["rscaled_dnorm"])
     sqrtrscaled_dnorm = _first_float(out_text, DEFAULT_PATTERNS["sqrtrscaled_dnorm"])
     rtimes_scaled_dnorm = _first_float(out_text, DEFAULT_PATTERNS["rtimes_scaled_dnorm"])
+    rsqr_scaled_dnorm = _first_float(out_text, DEFAULT_PATTERNS["rsqr_scaled_dnorm"])
     conv  = _detect_conv(out_text, DEFAULT_PATTERNS["converged"], DEFAULT_PATTERNS["not_converged"])
     first_eig_of_S = parse_first_eig_of_S(out_text, DEFAULT_PATTERNS["s_ovrlp"])
     first_eig_of_A = parse_first_eig_of_S(out_text, DEFAULT_PATTERNS["a_matrix"])
     opt_first_eig_of_A = parse_last_first_eigA_from_lines(out_text, DEFAULT_PATTERNS["a_matrix"])
-    logger.info("Parsed metrics: dvext=%s, du=%s, dlieb=%s, dnorm= %s, rscaled_dnorm=%s, sqrtrscaled_dnorm=%s, rtimes_scaled_dnorm=%s, converged=%s", dvext, du, dlieb, dnorm, rscaled_dnorm, sqrtrscaled_dnorm, rtimes_scaled_dnorm, conv)
-    logger.info("First eigen value of S is %s",first_eig_of_S)
-    logger.info("First eigen value of A is %s",first_eig_of_A)
-    logger.info("OPT First eigen value of A is %s",opt_first_eig_of_A)
+    logger = logging.getLogger("oep-opt") if phase == "log" else logging.getLogger("oep-opt.grad")
+#    if logging:
+    if phase == "log":
+        logger.info("Parsed metrics: dvext=%s, du=%s, dlieb=%s, dnorm= %s, rscaled_dnorm=%s, sqrtrscaled_dnorm=%s, rtimes_scaled_dnorm=%s, rsqr_scaled_dnorm=%s, converged=%s",
+                    dvext, du, dlieb, dnorm, rscaled_dnorm, sqrtrscaled_dnorm, rtimes_scaled_dnorm, rsqr_scaled_dnorm, conv)
+        logger.info("First eigen value of S is %s",first_eig_of_S)
+        logger.info("First eigen value of A is %s",first_eig_of_A)
+        logger.info("OPT First eigen value of A is %s",opt_first_eig_of_A)
     #print(f"[DEBUG] Parsed metrics: dvext={dvext}, du={du}, dlieb={dlieb}, dnorm={dnorm}, converged={conv}")
     return {"dvext": dvext, "du": du, "dlieb": dlieb, "dnorm": dnorm, "rscaled_dnorm": rscaled_dnorm, "sqrtrscaled_dnorm": sqrtrscaled_dnorm,"rtimes_scaled_dnorm": rtimes_scaled_dnorm,
-             "converged": conv, "first_eig_of_S": first_eig_of_S, "first_eig_of_A": first_eig_of_A, "opt_first_eig_of_A": opt_first_eig_of_A}
+            "rsqr_scaled_dnorm": rsqr_scaled_dnorm, "converged": conv, "first_eig_of_S": first_eig_of_S, "first_eig_of_A": first_eig_of_A, "opt_first_eig_of_A": opt_first_eig_of_A}
