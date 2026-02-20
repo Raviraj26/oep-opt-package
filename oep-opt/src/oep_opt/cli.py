@@ -27,7 +27,9 @@ def main(argv=None):
     p.add_argument("--aux-parent", default="aug-cc-pVDZ/mp2fit")
     p.add_argument("--dm-file", default="dm.dat")
     p.add_argument("--e-ref", type=float, default=-75.056798837342)
-
+    p.add_argument("--alpha-occ", type=int, default=5)
+    p.add_argument("--beta-occ", type=int, default=3)
+    p.add_argument("--r-dnorm-cutoff", type=float, default=6.0)
     # Template + work
     p.add_argument("--template", default="molpro_template.inp")
     p.add_argument("--workdir", default="runs_O")
@@ -99,6 +101,7 @@ def main(argv=None):
     redundancy_penalty = Redundancy_penalty(a = args.redundancy_penalty_coeff_a, b = args.redundancy_penalty_coeff_b, c = args.redundancy_penalty_coeff_c, knob = args.redundancy_penalty_knob)
     cfg = JobConfig(
         elem=args.elem, charge=args.charge, spin=args.spin,
+        alpha_occ=args.alpha_occ, beta_occ=args.beta_occ, r_dnormcutoff=args.r_dnorm_cutoff,
         orbital_parent=args.orbital_parent, aux_parent=args.aux_parent,
         dm_file=args.dm_file, e_ref=args.e_ref,
         template_text=template_text, workroot=Path(args.workdir), run_sh_path=Path(args.run_sh),

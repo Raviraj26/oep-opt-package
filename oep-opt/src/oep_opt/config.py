@@ -44,7 +44,9 @@ class JobConfig:
     aux_parent: str = "aug-cc-pVDZ/mp2fit"
     dm_file: str = "dm.dat"
     e_ref: float = -75.056798837342
-
+    alpha_occ: int = 5
+    beta_occ: int = 3
+    r_dnormcutoff: float = 6.0
     # paths
     template_text: str = ""
     workroot: Path = Path("runs_O")

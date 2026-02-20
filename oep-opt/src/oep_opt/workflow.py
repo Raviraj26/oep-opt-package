@@ -41,6 +41,7 @@ def objective(theta: np.ndarray, cfg: JobConfig, phase = "log") -> float:
 
     s_line = format_exps_for_molpro(exps_desc)
     inp_path = write_input_file(cfg.template_text, cfg.elem, cfg.charge, cfg.spin,
+                                cfg.alpha_occ, cfg.beta_occ, cfg.r_dnormcutoff,
                                 cfg.orbital_parent, cfg.aux_parent, s_line,
                                 cfg.dm_file, cfg.e_ref, rundir)
 
