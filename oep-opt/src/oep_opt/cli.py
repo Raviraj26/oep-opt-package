@@ -12,6 +12,7 @@ from .workflow import objective, exps_from_theta
 from .parameterizations import ensure_descending
 from .utils import read_exps_from_file
 from .concurrency import Evaluator, jac_central_parallel, jac_forward_parallel
+from .io_utils import write_cases_output_with_best_exps
 
 def str2bool(x):
     return x.lower() in ("yes","true","t","1","y")
@@ -26,6 +27,7 @@ def main(argv=None):
     p.add_argument("--orbital-parent", default="aug-cc-pwCV5Z")
     p.add_argument("--aux-parent", default="aug-cc-pVDZ/mp2fit")
     p.add_argument("--dm-file", default="dm.dat")
+    p.add_argument("--input-case-file", default="elem.env")
     p.add_argument("--e-ref", type=float, default=-75.056798837342)
     p.add_argument("--alpha-occ", type=int, default=5)
     p.add_argument("--beta-occ", type=int, default=3)
@@ -92,6 +94,7 @@ def main(argv=None):
 
 
     template_text = Path(args.template).read_text()
+    input_case_file = Path(args.input_case_file).resolve()  # resolve to absolute path for later use
     weights = Weights(w_dvext=args.w_dvext, w_du=args.w_du, w_lieb=args.w_lieb, w_norm=args.w_norm,
                       w_rscaled_norm=args.w_rscaled_norm, w_sqrtrscaled_norm=args.w_sqrtrscaled_norm,
                       w_rtimes_scaled_norm=args.w_rtimes_scaled_norm, w_rsqr_scaled_norm= args.w_rsqr_scaled_norm)
@@ -103,7 +106,7 @@ def main(argv=None):
         elem=args.elem, charge=args.charge, spin=args.spin,
         alpha_occ=args.alpha_occ, beta_occ=args.beta_occ, r_dnormcutoff=args.r_dnorm_cutoff,
         orbital_parent=args.orbital_parent, aux_parent=args.aux_parent,
-        dm_file=args.dm_file, e_ref=args.e_ref,
+        dm_file=args.dm_file, input_case_file=input_case_file, e_ref=args.e_ref,
         template_text=template_text, workroot=Path(args.workdir), run_sh_path=Path(args.run_sh),
         mode=args.mode, K=args.K, weights=weights, s_ovrlp_penalty=s_ovrlp_penalty,redundancy_penalty=redundancy_penalty,
         a_coupling_penalty = a_coupling_penalty, sbatch_cmd=args.sbatch_cmd, poll_s=args.poll_s, max_wait_s=args.max_wait_s,
@@ -208,4 +211,12 @@ def main(argv=None):
     out_snip = Path(cfg.workroot) / f"optimized_s_{cfg.elem}_{cfg.mode}.bas"
     out_snip.write_text(snippet)
     logger.info("Saved optimized s-shell snippet -> %s", out_snip)
+
+    # case file you started from (or the one in cases/)
+    case_in = Path(cfg.input_case_file)          # you need to have this in cfg, or pass it around
+    case_out = cfg.workroot / "case_output.env"  # or a central cases_output/<ELEM>.env
+
+    ok = write_cases_output_with_best_exps(case_in, case_out, best_exps)
+    logger.info("Saved case output with best exponents -> %s (success=%s)", case_out, ok)
+
     #print(f"\n[OK] Saved optimized s-shell snippet -> {out_snip}")

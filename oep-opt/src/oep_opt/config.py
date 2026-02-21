@@ -43,6 +43,7 @@ class JobConfig:
     orbital_parent: str = "aug-cc-pwCV5Z"
     aux_parent: str = "aug-cc-pVDZ/mp2fit"
     dm_file: str = "dm.dat"
+    input_case_file: str = "elem.env"
     e_ref: float = -75.056798837342
     alpha_occ: int = 5
     beta_occ: int = 3
