@@ -18,12 +18,12 @@ def even_tempered_from_params(theta: np.ndarray, K: int, exp_min: float, exp_max
     beta = 1.0 + float(_softplus(np.array([v]))[0])
     exps = [alpha_hi * (beta ** (-k)) for k in range(K)]
     exps = [min(max(x, exp_min), exp_max) for x in exps]
-    return ensure_descending(exps)
+    return exps
 
 def free_exponents_from_params(theta: np.ndarray, K: int, exp_min: float, exp_max: float) -> List[float]:
     if len(theta) != K:
         raise ValueError(f"theta length {len(theta)} must equal K={K}.")
     exps = list(np.exp(theta))
     exps = [min(max(x, exp_min), exp_max) for x in exps]
-    return ensure_descending(exps)
+    return exps
 

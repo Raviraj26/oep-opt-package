@@ -9,7 +9,6 @@ import logging
 from .logging_setup import setup_logging
 from .config import JobConfig, Weights, S_ovrlp_penalty, Redundancy_penalty, A_coupling_penalty
 from .workflow import objective, exps_from_theta
-from .parameterizations import ensure_descending
 from .utils import read_exps_from_file
 from .concurrency import Evaluator, jac_central_parallel, jac_forward_parallel
 from .io_utils import write_cases_output_with_best_exps
@@ -155,7 +154,7 @@ def main(argv=None):
             alpha0 = float(args.init_alpha_hi)
             beta0 = float(args.init_beta)
             seed = [alpha0 * (beta0 ** (-k)) for k in range(cfg.K)]
-            seed = ensure_descending(seed)
+            seed = seed
         else:
             if args.init_exps:
                 seed = [float(t) for t in args.init_exps.replace(",", " ").split()]
@@ -206,7 +205,7 @@ def main(argv=None):
     #print(res)
 
     best_exps = exps_from_theta(np.array(res.x, dtype=float), cfg)
-    best_exps = ensure_descending(best_exps)
+    best_exps = best_exps
     snippet = f"s,{cfg.elem}," + ", ".join(f"{e:.8g}" for e in best_exps) + ".\n"
     out_snip = Path(cfg.workroot) / f"optimized_s_{cfg.elem}_{cfg.mode}.bas"
     out_snip.write_text(snippet)

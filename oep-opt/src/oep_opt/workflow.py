@@ -10,7 +10,7 @@ grad_logger = logging.getLogger("oep-opt.grad")
 
 
 from .config import JobConfig
-from .parameterizations import even_tempered_from_params, free_exponents_from_params, ensure_descending
+from .parameterizations import even_tempered_from_params, free_exponents_from_params
 from .io_utils import format_exps_for_molpro, write_input_file, stage_dm_as_link
 from .slurm import run_molpro_via_slurm
 from .parsing import parse_metrics
@@ -37,7 +37,7 @@ def objective(theta: np.ndarray, cfg: JobConfig, phase = "log") -> float:
     stage_dm_as_link(cfg.dm_file, rundir)
 
     exps = exps_from_theta(theta, cfg)
-    exps_desc = ensure_descending(exps)
+    exps_desc = exps
 
     s_line = format_exps_for_molpro(exps_desc)
     inp_path = write_input_file(cfg.template_text, cfg.elem, cfg.charge, cfg.spin,
