@@ -8,8 +8,11 @@ import re
 import datetime as dt
 
 
+#def format_exps_for_molpro(exps: Sequence[float]) -> str:
+#    return ", ".join(f"{x:.8g}" for x in exps) + "."
+
 def format_exps_for_molpro(exps: Sequence[float]) -> str:
-    return ", ".join(f"{x:.8g}" for x in exps) + "."
+    return ", ".join(f"{float(x):.17g}" for x in exps) + "."
 
 def render_input(template_text: str, elem: str, charge: int, spin: int,
                     alpha_occ: int, beta_occ: int, r_dnormcutoff: float,

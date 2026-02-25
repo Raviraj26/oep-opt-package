@@ -162,7 +162,8 @@ def main(argv=None):
                 seed = read_exps_from_file(Path(args.init_exps_file), args.elem)
         if len(seed) != cfg.K:
             raise ValueError(f"Provided {len(seed)} exponents, but K={cfg.K}.")
-        x0 = np.log(np.array(seed, dtype=float))
+        #x0 = np.log(np.array(seed, dtype=float))
+        x0 = np.array(seed, dtype=float)
         #logger.info("Starting free_exponents optimization for %s with K=%d", cfg.elem, cfg.K)
         logger.info("Initial seed exponents: %s", ", ".join(f"{e:.6f}" for e in seed))
         #print(f"[INFO] Starting free_exponents optimization for {cfg.elem} with K={cfg.K}")
@@ -181,15 +182,27 @@ def main(argv=None):
                 return jac_forward_parallel(t, evaluator, eps=args.eps)
             elif args.parallel_eval_method == "central":
                 return jac_central_parallel(t, evaluator, eps=args.eps)
-
-        res = minimize(
-            fun=fun_wrapped,
-            x0=x0,
-            method="BFGS",
-            jac=jac_wrapped,
-            options={"maxiter": args.maxiter, "disp": True, "gtol": args.gtol, "eps": args.eps}
-            if args.method in {"BFGS", "CG", "Newton-CG", "L-BFGS-B", "TNC"}
-            else {"maxiter": args.maxiter, "disp": True}
+        if args.method in {"L-BFGS-B", "TNC"}:
+            bounds = [(1e-12, None)] * len(x0)
+            res = minimize(
+                fun=fun_wrapped,
+                x0=x0,
+                method="L-BFGS-B",
+                jac=jac_wrapped,
+                bounds=bounds,
+                options={"maxiter": args.maxiter, "disp": True, "gtol": args.gtol, "eps": args.eps}
+                if args.method in {"BFGS", "CG", "Newton-CG", "L-BFGS-B", "TNC"}
+                else {"maxiter": args.maxiter, "disp": True}
+                )
+        else:
+            res = minimize(
+                fun=fun_wrapped,
+                x0=x0,
+                method=args.method,
+                jac=jac_wrapped if args.method in {"BFGS", "CG", "Newton-CG", "L-BFGS-B", "TNC"} else None,
+                options={"maxiter": args.maxiter, "disp": True, "gtol": args.gtol, "eps": args.eps}
+                if args.method in {"BFGS", "CG", "Newton-CG", "L-BFGS-B", "TNC"}
+                else {"maxiter": args.maxiter, "disp": True}
             )
     else:
         res = minimize(

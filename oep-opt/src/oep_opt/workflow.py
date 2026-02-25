@@ -16,6 +16,7 @@ from .slurm import run_molpro_via_slurm
 from .parsing import parse_metrics
 from .scoring import score_from_metrics
 from .utils import stable_tag_from_theta
+from .scoring import negative_exps_penalty
 
 def exps_from_theta(theta: np.ndarray, cfg: JobConfig) -> List[float]:
     if cfg.mode == "even_tempered":
@@ -36,10 +37,16 @@ def objective(theta: np.ndarray, cfg: JobConfig, phase = "log") -> float:
     #        tgt.write_bytes(dm_src.read_bytes())
     stage_dm_as_link(cfg.dm_file, rundir)
 
-    exps = exps_from_theta(theta, cfg)
-    exps_desc = exps
+    #exps = exps_from_theta(theta, cfg)
+    exps = theta
 
-    s_line = format_exps_for_molpro(exps_desc)
+
+    if phase == "log":
+        logger.info("exps dtype=%s (item type=%s)", exps.dtype, type(exps.flat[0]).__name__)
+
+    #exps_desc = exps
+
+    s_line = format_exps_for_molpro(exps)
     inp_path = write_input_file(cfg.template_text, cfg.elem, cfg.charge, cfg.spin,
                                 cfg.alpha_occ, cfg.beta_occ, cfg.r_dnormcutoff,
                                 cfg.orbital_parent, cfg.aux_parent, s_line,
@@ -57,7 +64,7 @@ def objective(theta: np.ndarray, cfg: JobConfig, phase = "log") -> float:
             cfg.elem,
             cfg.mode,
             cfg.K,
-            ", ".join(f"{e:.6f}" for e in exps_desc),
+            ", ".join(f"{e:.17g}" for e in exps),
             rundir.name,
         )
     except Exception:
@@ -69,7 +76,12 @@ def objective(theta: np.ndarray, cfg: JobConfig, phase = "log") -> float:
             rundir.name,
         )
 
-
+    for i in range(0, len(exps)):
+        if exps[i] < 0.0:
+            sc = negative_exps_penalty(exps)
+            if phase == "log":
+                logger.info("Penalty for negative exps %s", sc)
+            return sc
 
     rc, out_text = run_molpro_via_slurm(cfg.run_sh_path, rundir,
                                         sbatch_cmd=cfg.sbatch_cmd,
@@ -77,17 +89,13 @@ def objective(theta: np.ndarray, cfg: JobConfig, phase = "log") -> float:
                                         max_wait_s=cfg.max_wait_s)
 
     metrics = parse_metrics(out_text, phase=phase)
-    sc = score_from_metrics(exps_desc ,metrics, cfg.weights, cfg.s_ovrlp_penalty,cfg.redundancy_penalty, cfg.a_coupling_penalty,phase=phase)
+    sc = score_from_metrics(exps ,metrics, cfg.weights, cfg.s_ovrlp_penalty,cfg.redundancy_penalty, cfg.a_coupling_penalty,phase=phase)
     
-    if cfg.order_penalty > 0.0:
-        for i in range(1, len(exps_desc)):
-            if exps_desc[i] >= exps_desc[i - 1]:
-                sc += cfg.order_penalty
     if phase == "log":
         logger_file.info("The score which is considered is %s", sc)
     with open(rundir / "metrics.json", "w") as f:
         json.dump(
-            {"mode": cfg.mode, "theta": list(map(float, theta)), "exponents": exps_desc,
+            {"mode": cfg.mode, "theta": list(map(float, theta)), "exponents": list(map(float, exps)),
              "metrics": metrics, "score": sc},
             f, indent=2
         )

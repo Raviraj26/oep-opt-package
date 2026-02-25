@@ -51,6 +51,13 @@ def eval_redundancy_penalty(phase,logger, sc, exps_desc, a, b, c):
         #ratio = ratio + exps_list[]
 
 
+def negative_exps_penalty(exps):
+    penalty = 0.0
+    for i in range(0, len(exps)):
+        if exps[i] < 0.0:
+            penalty = penalty + 1.0 * (exps[i])**(-4)
+    return penalty
+
 def score_from_metrics(exps_desc: Sequence[float], metrics: Dict[str, Optional[float]], weights: Weights,
                         s_ovrlp_penalty: S_ovrlp_penalty, redundancy_penalty: Redundancy_penalty, a_coupling_penalty: A_coupling_penalty,
                         fail_penalty: float = 1e6, phase ="log") -> float:

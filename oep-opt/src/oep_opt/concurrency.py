@@ -42,41 +42,108 @@ class Evaluator:
                 i = futs[fut]
                 out[i] = fut.result()
         return out
-    
 def jac_central_parallel(theta: np.ndarray, evaluator: Evaluator, eps: float) -> np.ndarray:
-    grad_logger.info("Computing CD gradient at theta=%s", ", ".join(f"{t:.6g}" for t in theta))
-    theta = np.asarray(theta, float)
+    theta = np.asarray(theta, dtype=np.float64)
     K = theta.size
 
+    grad_logger.info(
+        "Computing CD gradient at theta=%s",
+        ", ".join(f"{t:.17g}" for t in theta)
+    )
+
     thetas = []
+    deltas = np.empty(K, dtype=np.float64)
+
     for i in range(K):
-        tp = theta.copy(); tp[i] += eps
-        tm = theta.copy(); tm[i] -= eps
+        tp = theta.copy()
+        tm = theta.copy()
+
+        step = theta[i] * eps
+        tp[i] += step
+        tm[i] -= step
+
+        deltas[i] = 2.0 * step
         thetas.append(tp)
         thetas.append(tm)
 
-    vals = evaluator.eval_many(thetas)
-    vals = np.array(vals, float).reshape(K, 2)
+    vals = np.asarray(evaluator.eval_many(thetas), dtype=np.float64).reshape(K, 2)
     f_plus = vals[:, 0]
     f_minus = vals[:, 1]
-    g = (f_plus - f_minus) / (2.0 * eps)
-    grad_logger.info("Gradient: %s", ", ".join(f"{gi:.6g}" for gi in g))
+
+    g = (f_plus - f_minus) / deltas
+
+    grad_logger.info("Gradient: %s", ", ".join(f"{gi:.17g}" for gi in g))
     return g
+
+import numpy as np
 
 def jac_forward_parallel(theta: np.ndarray, evaluator: Evaluator, eps: float) -> np.ndarray:
-    grad_logger.info("Computing FD gradient at theta=%s", ", ".join(f"{t:.6g}" for t in theta))
-    theta = np.asarray(theta, float)
+    theta = np.asarray(theta, dtype=np.float64)
     K = theta.size
 
-    f0 = evaluator.eval_one(theta)
+    grad_logger.info(
+        "Computing FD gradient at theta=%s",
+        ", ".join(f"{t:.17g}" for t in theta)
+    )
+
+    f0 = float(evaluator.eval_one(theta))
 
     thetas = []
+    deltas = np.empty(K, dtype=np.float64)
+
     for i in range(K):
         tp = theta.copy()
-        tp[i] += eps
+
+        step = theta[i] * eps
+        tp[i] += step
+
+        deltas[i] = step
         thetas.append(tp)
 
-    f_plus = evaluator.eval_many(thetas)
-    g = (np.array(f_plus, float) - f0) / eps
-    grad_logger.info("Gradient: %s", ", ".join(f"{gi:.6g}" for gi in g))
+    f_plus = np.asarray(evaluator.eval_many(thetas), dtype=np.float64)
+    g = (f_plus - f0) / deltas
+
+    grad_logger.info("Gradient: %s", ", ".join(f"{gi:.17g}" for gi in g))
     return g
+
+#def jac_central_parallel(theta: np.ndarray, evaluator: Evaluator, eps: float) -> np.ndarray:
+#    grad_logger.info(
+#        "Computing CD gradient at theta=%s",
+#        ", ".join(f"{t:.17g}" for t in theta)
+#    )
+#    theta = np.asarray(theta, dtype=np.float64)
+#    K = theta.size#
+
+#    thetas = np.empty(K, dtype=np.float64)
+#    deltas = np.empty(K, dtype=np.float64)
+#    for i in range(K):
+#        tp = theta.copy()
+#        tm = theta.copy()#
+
+#        step = theta[i] * eps
+#        tp[i] += step
+#        tm[i] -= step
+
+#        deltas[i] = 2.0 * step
+#        thetas.append(tp)
+#        thetas.append(tm)
+
+    #for i in range(K):
+        
+    #    tp = theta.copy(); deltas.append(np.float(2.0)*tp[i]*eps); tp[i] += tp[i]*eps
+    #    tm = theta.copy(); tm[i] -= tm[i]*eps
+    #    thetas.append(tp)
+    #    thetas.append(tm)
+        
+
+#    vals = evaluator.eval_many(thetas)
+#    vals = np.array(vals, float).reshape(K, 2)
+#    f_plus = vals[:, 0]
+#    f_minus = vals[:, 1]
+#    g = []
+#    for i in range(K):
+#        g[i] = (f_plus[i] - f_minus[i]) / deltas[i] 
+#    grad_logger.info("Gradient: %s", ", ".join(f"{gi:.6g}" for gi in g))
+#    return g
+
+
