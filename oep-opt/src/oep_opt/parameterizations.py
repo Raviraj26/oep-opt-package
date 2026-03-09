@@ -21,9 +21,10 @@ def even_tempered_from_params(theta: np.ndarray, K: int, exp_min: float, exp_max
     return exps
 
 def free_exponents_from_params(theta: np.ndarray, K: int, exp_min: float, exp_max: float) -> List[float]:
+    
     if len(theta) != K:
         raise ValueError(f"theta length {len(theta)} must equal K={K}.")
     exps = list(np.exp(theta))
-    exps = [min(max(x, exp_min), exp_max) for x in exps]
+    #exps = [min(max(x, exp_min), exp_max) for x in exps]
     return exps
 

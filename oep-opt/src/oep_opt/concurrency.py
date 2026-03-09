@@ -48,9 +48,9 @@ def jac_central_parallel(theta: np.ndarray, evaluator: Evaluator, eps: float) ->
 
     grad_logger.info(
         "Computing CD gradient at theta=%s",
-        ", ".join(f"{t:.17g}" for t in theta)
+        ", ".join(f"{t:.17f}" for t in theta)
     )
-
+    
     thetas = []
     deltas = np.empty(K, dtype=np.float64)
 
@@ -58,7 +58,8 @@ def jac_central_parallel(theta: np.ndarray, evaluator: Evaluator, eps: float) ->
         tp = theta.copy()
         tm = theta.copy()
 
-        step = theta[i] * eps
+        #step = theta[i] * eps
+        step = eps
         tp[i] += step
         tm[i] -= step
 
@@ -72,7 +73,7 @@ def jac_central_parallel(theta: np.ndarray, evaluator: Evaluator, eps: float) ->
 
     g = (f_plus - f_minus) / deltas
 
-    grad_logger.info("Gradient: %s", ", ".join(f"{gi:.17g}" for gi in g))
+    grad_logger.info("Gradient: %s", ", ".join(f"{gi:.17f}" for gi in g))
     return g
 
 import numpy as np
@@ -83,7 +84,7 @@ def jac_forward_parallel(theta: np.ndarray, evaluator: Evaluator, eps: float) ->
 
     grad_logger.info(
         "Computing FD gradient at theta=%s",
-        ", ".join(f"{t:.17g}" for t in theta)
+        ", ".join(f"{t:.17f}" for t in theta)
     )
 
     f0 = float(evaluator.eval_one(theta))
@@ -94,7 +95,8 @@ def jac_forward_parallel(theta: np.ndarray, evaluator: Evaluator, eps: float) ->
     for i in range(K):
         tp = theta.copy()
 
-        step = theta[i] * eps
+        #step = theta[i] * eps
+        step = eps
         tp[i] += step
 
         deltas[i] = step
@@ -103,13 +105,13 @@ def jac_forward_parallel(theta: np.ndarray, evaluator: Evaluator, eps: float) ->
     f_plus = np.asarray(evaluator.eval_many(thetas), dtype=np.float64)
     g = (f_plus - f0) / deltas
 
-    grad_logger.info("Gradient: %s", ", ".join(f"{gi:.17g}" for gi in g))
+    grad_logger.info("Gradient: %s", ", ".join(f"{gi:.17f}" for gi in g))
     return g
 
 #def jac_central_parallel(theta: np.ndarray, evaluator: Evaluator, eps: float) -> np.ndarray:
 #    grad_logger.info(
 #        "Computing CD gradient at theta=%s",
-#        ", ".join(f"{t:.17g}" for t in theta)
+#        ", ".join(f"{t:.17f}" for t in theta)
 #    )
 #    theta = np.asarray(theta, dtype=np.float64)
 #    K = theta.size#

@@ -37,12 +37,12 @@ def objective(theta: np.ndarray, cfg: JobConfig, phase = "log") -> float:
     #        tgt.write_bytes(dm_src.read_bytes())
     stage_dm_as_link(cfg.dm_file, rundir)
 
-    #exps = exps_from_theta(theta, cfg)
-    exps = theta
+    exps = exps_from_theta(theta, cfg)
+    #exps = theta
 
 
-    if phase == "log":
-        logger.info("exps dtype=%s (item type=%s)", exps.dtype, type(exps.flat[0]).__name__)
+    #if phase == "log":
+    #    logger.info("exps dtype=%s (item type=%s)", exps.dtype, type(exps.flat[0]).__name__)
 
     #exps_desc = exps
 
@@ -64,7 +64,7 @@ def objective(theta: np.ndarray, cfg: JobConfig, phase = "log") -> float:
             cfg.elem,
             cfg.mode,
             cfg.K,
-            ", ".join(f"{e:.17g}" for e in exps),
+            ", ".join(f"{e:.17f}" for e in exps),
             rundir.name,
         )
     except Exception:

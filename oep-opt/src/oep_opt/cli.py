@@ -12,6 +12,7 @@ from .workflow import objective, exps_from_theta
 from .utils import read_exps_from_file
 from .concurrency import Evaluator, jac_central_parallel, jac_forward_parallel
 from .io_utils import write_cases_output_with_best_exps
+from .callback import BFGSCallback
 
 def str2bool(x):
     return x.lower() in ("yes","true","t","1","y")
@@ -162,8 +163,9 @@ def main(argv=None):
                 seed = read_exps_from_file(Path(args.init_exps_file), args.elem)
         if len(seed) != cfg.K:
             raise ValueError(f"Provided {len(seed)} exponents, but K={cfg.K}.")
-        #x0 = np.log(np.array(seed, dtype=float))
-        x0 = np.array(seed, dtype=float)
+        x0 = np.log(np.array(seed, dtype=float))
+        
+        #x0 = np.array(seed, dtype=float)
         #logger.info("Starting free_exponents optimization for %s with K=%d", cfg.elem, cfg.K)
         logger.info("Initial seed exponents: %s", ", ".join(f"{e:.6f}" for e in seed))
         #print(f"[INFO] Starting free_exponents optimization for {cfg.elem} with K={cfg.K}")
@@ -182,6 +184,14 @@ def main(argv=None):
                 return jac_forward_parallel(t, evaluator, eps=args.eps)
             elif args.parallel_eval_method == "central":
                 return jac_central_parallel(t, evaluator, eps=args.eps)
+        logdir = Path(rundir) /"opt_log"
+        cb = BFGSCallback(
+            fun    = fun_wrapped,
+            jac    = jac_wrapped if args.method in {"BFGS","CG","Newton-CG","L-BFGS-B","TNC"} else None,
+            logdir = logdir,   # one grad.log + per-iter x/g/f files written here
+            verbose= True,
+            )
+
         if args.method in {"L-BFGS-B", "TNC"}:
             bounds = [(1e-12, None)] * len(x0)
             res = minimize(
@@ -192,7 +202,8 @@ def main(argv=None):
                 bounds=bounds,
                 options={"maxiter": args.maxiter, "disp": True, "gtol": args.gtol, "eps": args.eps}
                 if args.method in {"BFGS", "CG", "Newton-CG", "L-BFGS-B", "TNC"}
-                else {"maxiter": args.maxiter, "disp": True}
+                else {"maxiter": args.maxiter, "disp": True},
+                callback = cb,
                 )
         else:
             res = minimize(
@@ -202,8 +213,11 @@ def main(argv=None):
                 jac=jac_wrapped if args.method in {"BFGS", "CG", "Newton-CG", "L-BFGS-B", "TNC"} else None,
                 options={"maxiter": args.maxiter, "disp": True, "gtol": args.gtol, "eps": args.eps}
                 if args.method in {"BFGS", "CG", "Newton-CG", "L-BFGS-B", "TNC"}
-                else {"maxiter": args.maxiter, "disp": True}
+                else {"maxiter": args.maxiter, "disp": True},
+                callback = cb,
             )
+        cb.summary()
+        cb.save_json(logdir / "history.json")
     else:
         res = minimize(
                     fun=objective, x0=x0, args=(cfg,), method=args.method,
