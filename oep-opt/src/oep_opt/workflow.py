@@ -76,12 +76,12 @@ def objective(theta: np.ndarray, cfg: JobConfig, phase = "log") -> float:
             rundir.name,
         )
 
-    for i in range(0, len(exps)):
-        if exps[i] < 0.0:
-            sc = negative_exps_penalty(exps)
-            if phase == "log":
-                logger.info("Penalty for negative exps %s", sc)
-            return sc
+    #for i in range(0, len(exps)):
+    #    if exps[i] < 0.0:
+    #        sc = negative_exps_penalty(exps)
+    #        if phase == "log":
+    #            logger.info("Penalty for negative exps %s", sc)
+    #        return sc
 
     rc, out_text = run_molpro_via_slurm(cfg.run_sh_path, rundir,
                                         sbatch_cmd=cfg.sbatch_cmd,

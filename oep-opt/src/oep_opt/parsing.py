@@ -4,20 +4,41 @@ import logging
 #logger = logging.getLogger("oep-opt")
 
 
+#DEFAULT_PATTERNS: Dict[str, list[str]] = {
+#    "dvext": [r"(?m)^\s*KSINV\s+External\s+energy\s+error\s+([+-]?\d+(?:\.\d+)?(?:[Ee][+-]?\d+)?)"],
+#    "du":    [r"(?m)^\s*KSINV\s+Hartree\s+energy\s+error\s+([+-]?\d+(?:\.\d+)?(?:[Ee][+-]?\d+)?)"],
+#    "dlieb": [r"(?m)^\s*KSINV\s+Lieb\s+error\s+([+-]?\d+(?:\.\d+)?(?:[Ee][+-]?\d+)?)"],
+#    "dnorm": [r"(?im)^\s*SYMMETRIZED\s+([+-]?(?:\d+(?:\.\d*)?|\.\d+)(?:[EeDd][+-]?\d+)?)"],
+#    "rscaled_dnorm": [r"(?im)^\s*R_SCALED_SYMMETRIZED\s+([+-]?(?:\d+(?:\.\d*)?|\.\d+)(?:[EeDd][+-]?\d+)?)"],
+#    "sqrtrscaled_dnorm": [r"(?im)^\s*SQRTR_SCALED_SYMMETRIZED\s+([+-]?(?:\d+(?:\.\d*)?|\.\d+)(?:[EeDd][+-]?\d+)?)"],
+#    "rtimes_scaled_dnorm": [r"(?im)^\s*Rtimes_SCALED_SYMMETRIZED\s+([+-]?(?:\d+(?:\.\d*)?|\.\d+)(?:[EeDd][+-]?\d+)?)"],
+#    "rsqr_scaled_dnorm": [r"(?im)^\s*RSQR_SCALED_SYMMETRIZED\s+([+-]?(?:\d+(?:\.\d*)?|\.\d+)(?:[EeDd][+-]?\d+)?)"],
+#    "converged": [r"(?im)^\s*SCF\s+Converged\s"],
+#    "not_converged": [r"(?im)^\s*SCF\s+NOT\s+Converged\s"],
+#    "s_ovrlp": [r"(?is)Eigenvalues of S\^I-matrix.*?\n[-\s]*\n\s*1\s+(?:\s*)?([+-]?(?:\d+(?:\.\d*)?|\.\d+)(?:[EeDd][+-]?\d+)?)"],
+#    "a_matrix": [r"(?is)Eigenvalues of A\^\{III\}-matrix.*?\n[-\s]*\n\s*1\s+(?:\s*)?([+-]?(?:\d+(?:\.\d*)?|\.\d+)(?:[EeDd][+-]?\d+)?)"],
+#}
 DEFAULT_PATTERNS: Dict[str, list[str]] = {
     "dvext": [r"(?m)^\s*KSINV\s+External\s+energy\s+error\s+([+-]?\d+(?:\.\d+)?(?:[Ee][+-]?\d+)?)"],
     "du":    [r"(?m)^\s*KSINV\s+Hartree\s+energy\s+error\s+([+-]?\d+(?:\.\d+)?(?:[Ee][+-]?\d+)?)"],
     "dlieb": [r"(?m)^\s*KSINV\s+Lieb\s+error\s+([+-]?\d+(?:\.\d+)?(?:[Ee][+-]?\d+)?)"],
-    "dnorm": [r"(?im)^\s*SYMMETRIZED\s+([+-]?(?:\d+(?:\.\d*)?|\.\d+)(?:[EeDd][+-]?\d+)?)"],
-    "rscaled_dnorm": [r"(?im)^\s*R_SCALED_SYMMETRIZED\s+([+-]?(?:\d+(?:\.\d*)?|\.\d+)(?:[EeDd][+-]?\d+)?)"],
-    "sqrtrscaled_dnorm": [r"(?im)^\s*SQRTR_SCALED_SYMMETRIZED\s+([+-]?(?:\d+(?:\.\d*)?|\.\d+)(?:[EeDd][+-]?\d+)?)"],
-    "rtimes_scaled_dnorm": [r"(?im)^\s*Rtimes_SCALED_SYMMETRIZED\s+([+-]?(?:\d+(?:\.\d*)?|\.\d+)(?:[EeDd][+-]?\d+)?)"],
-    "rsqr_scaled_dnorm": [r"(?im)^\s*RSQR_SCALED_SYMMETRIZED\s+([+-]?(?:\d+(?:\.\d*)?|\.\d+)(?:[EeDd][+-]?\d+)?)"],
+    "dnorm": [r"(?im)^\s*radial\s+86\s+directions\s+Without_R_cutoff_SYMMETRIZED\s+dnorm\s+([+-]?(?:\d+(?:\.\d*)?|\.\d+)(?:[EeDd][+-]?\d+)?)"],
+    "rscaled_dnorm": [r"(?im)^\s*radial\s+86\s+directions\s+Without_R_cutoff_SYMMETRIZED\s+rscaled\s+([+-]?(?:\d+(?:\.\d*)?|\.\d+)(?:[EeDd][+-]?\d+)?)"],
+    "sqrtrscaled_dnorm": [r"(?im)^\s*radial\s+86\s+directions\s+Without_R_cutoff_SYMMETRIZED\s+sqrtrscaled\s+([+-]?(?:\d+(?:\.\d*)?|\.\d+)(?:[EeDd][+-]?\d+)?)"],
+    "rtimes_scaled_dnorm": [r"(?im)^\s*radial\s+86\s+directions\s+Without_R_cutoff_SYMMETRIZED\s+rtimes\s+([+-]?(?:\d+(?:\.\d*)?|\.\d+)(?:[EeDd][+-]?\d+)?)"],
+    "rsqr_scaled_dnorm": [r"(?im)^\s*radial\s+86\s+directions\s+Without_R_cutoff_SYMMETRIZED\s+rsqrscaled\s+([+-]?(?:\d+(?:\.\d*)?|\.\d+)(?:[EeDd][+-]?\d+)?)"],
     "converged": [r"(?im)^\s*SCF\s+Converged\s"],
     "not_converged": [r"(?im)^\s*SCF\s+NOT\s+Converged\s"],
     "s_ovrlp": [r"(?is)Eigenvalues of S\^I-matrix.*?\n[-\s]*\n\s*1\s+(?:\s*)?([+-]?(?:\d+(?:\.\d*)?|\.\d+)(?:[EeDd][+-]?\d+)?)"],
     "a_matrix": [r"(?is)Eigenvalues of A\^\{III\}-matrix.*?\n[-\s]*\n\s*1\s+(?:\s*)?([+-]?(?:\d+(?:\.\d*)?|\.\d+)(?:[EeDd][+-]?\d+)?)"],
 }
+
+# radial 86 directions Without_R_cutoff_SYMMETRIZED dnorm   0.0040572562437002
+# radial 86 directions symmetrized KSINV N_elec   7.9999999999967191
+# radial 86 directions SYMMETRIZED REF N_elec   7.9999999999966827
+# radial 86 directions Without_R_cutoff_SYMMETRIZED rscaled   0.0042791267485783
+# radial 86 directions Without_R_cutoff_SYMMETRIZED rtimes   0.0079538060314632
+# radial 86 directions Without_R_cutoff_SYMMETRIZED rsqrscaled   0.0149157528624285
 
 def _detect_conv(out_text: str, yes_pats: Iterable[str], no_pats: Iterable[str]) -> Optional[bool]:
     for pat in no_pats:

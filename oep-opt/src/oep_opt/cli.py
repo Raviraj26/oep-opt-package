@@ -233,7 +233,7 @@ def main(argv=None):
 
     best_exps = exps_from_theta(np.array(res.x, dtype=float), cfg)
     best_exps = best_exps
-    snippet = f"s,{cfg.elem}," + ", ".join(f"{e:.8g}" for e in best_exps) + ".\n"
+    snippet = f"s,{cfg.elem}," + ", ".join(f"{e:.17f}" for e in best_exps) + ".\n"
     out_snip = Path(cfg.workroot) / f"optimized_s_{cfg.elem}_{cfg.mode}.bas"
     out_snip.write_text(snippet)
     logger.info("Saved optimized s-shell snippet -> %s", out_snip)

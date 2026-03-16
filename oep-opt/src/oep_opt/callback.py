@@ -62,6 +62,7 @@ class BFGSCallback:
         t_elapsed = time.perf_counter() - self._t0
 
         x   = np.array(xk, dtype=float).copy()
+        #x   = np.exp(x) 
         f   = float(self.fun(x))
         g   = np.array(self.jac(x), dtype=float).copy() if self.jac else None
         gn  = float(np.linalg.norm(g)) if g is not None else float("nan")
@@ -91,6 +92,12 @@ class BFGSCallback:
                 g_str = "  ".join(f"{v:.16e}" for v in (g if g is not None else []))
                 fh.write(
                     f"{it}  {f:.16e}  {gn:.16e}  {g_str}\n"
+                )
+            with open(self.logdir / "coeff.log", "a") as fs:
+                # each line: iteration  f  gnorm  g[0]  g[1]  ...
+                c_str = "  ".join(f"{np.exp(v):.17f}" for v in (x if x is not None else []))
+                fs.write(
+                    f"{it}  {f:.16e}  {gn:.16e}  {c_str}\n"
                 )
 
     # ------------------------------------------------------------------
