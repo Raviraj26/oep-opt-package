@@ -45,7 +45,12 @@ def main(argv=None):
     p.add_argument("--w-rsqr-scaled-norm", type=float, default=1.0)
     p.add_argument("--w-sqrtrscaled-norm", type=float, default=1.0)
     p.add_argument("--w-rtimes-scaled-norm", type=float, default=1.0)
-    
+    p.add_argument("--w-ref-proj-norm", type=float, default=1.0)
+    p.add_argument("--w-ref-proj-rscaled-norm", type=float, default=1.0)
+    p.add_argument("--w-ref-proj-rsqr-scaled-norm", type=float, default=1.0)
+    p.add_argument("--w-ref-proj-sqrtrscaled-norm", type=float, default=1.0)
+    p.add_argument("--w-ref-proj-rtimes-scaled-norm", type=float, default=1.0)
+
     ## S_overlap_penalty
     p.add_argument("--s_ovrlp_penalty_expo", type = float, default = 9.0)
     p.add_argument("--s_ovrlp_penalty_coeff", type = float, default = 1e-3)
@@ -95,9 +100,17 @@ def main(argv=None):
 
     template_text = Path(args.template).read_text()
     input_case_file = Path(args.input_case_file).resolve()  # resolve to absolute path for later use
-    weights = Weights(w_dvext=args.w_dvext, w_du=args.w_du, w_lieb=args.w_lieb, w_norm=args.w_norm,
-                      w_rscaled_norm=args.w_rscaled_norm, w_sqrtrscaled_norm=args.w_sqrtrscaled_norm,
-                      w_rtimes_scaled_norm=args.w_rtimes_scaled_norm, w_rsqr_scaled_norm= args.w_rsqr_scaled_norm)
+    weights = Weights(w_dvext=args.w_dvext, w_du=args.w_du, w_lieb=args.w_lieb,
+                      w_norm=args.w_norm,
+                      w_rscaled_norm=args.w_rscaled_norm,
+                      w_sqrtrscaled_norm=args.w_sqrtrscaled_norm,
+                      w_rtimes_scaled_norm=args.w_rtimes_scaled_norm,
+                      w_rsqr_scaled_norm= args.w_rsqr_scaled_norm,
+                      w_ref_proj_norm=args.w_ref_proj_norm,
+                      w_ref_proj_rscaled_norm=args.w_ref_proj_rscaled_norm,
+                      w_ref_proj_sqrtrscaled_norm=args.w_ref_proj_sqrtrscaled_norm,
+                      w_ref_proj_rtimes_scaled_norm=args.w_ref_proj_rtimes_scaled_norm,
+                      w_ref_proj_rsqr_scaled_norm=args.w_ref_proj_rsqr_scaled_norm)
     s_ovrlp_penalty = S_ovrlp_penalty(coeff=args.s_ovrlp_penalty_coeff, expo = args.s_ovrlp_penalty_expo, knob = args.knob_for_s_ovrlp_penalty)
     a_coupling_penalty = A_coupling_penalty(coeff = args.a_coupling_penalty_coeff, expo = args.a_coupling_penalty_expo, knob = args.knob_for_a_coupling_penalty)
     
@@ -125,8 +138,10 @@ def main(argv=None):
     logger.info("S_overlap penalty parameters expo=%s, coeff=%s, knob=%s", s_ovrlp_penalty.expo, s_ovrlp_penalty.coeff, s_ovrlp_penalty.knob)
     logger.info("A_coupling penalty parameters expo=%s, coeff=%s, knob=%s", a_coupling_penalty.expo, a_coupling_penalty.coeff, a_coupling_penalty.knob)
     logger.info("Redundancy penalty parameters a=%s,b=%s,c=%s, knob=%s",redundancy_penalty.a, redundancy_penalty.b, redundancy_penalty.c, redundancy_penalty.knob)
-    logger.info("Initial weights: w_dvext = %.3f, w_du = %.3f, w_dlieb = %.3f,w_dnorm = %.3f, w_rscaled_dnorm = %.3f, w_sqrtrscaled_norm = %.3f, w_rtimes_scaled_norm = %.3f, w_rsqr_scaled_norm = %.3f", 
-                args.w_dvext, args.w_du, args.w_lieb, args.w_norm, args.w_rscaled_norm, args.w_sqrtrscaled_norm, args.w_rtimes_scaled_norm, args.w_rsqr_scaled_norm)
+    logger.info("Initial weights: w_dvext = %.3f, w_du = %.3f, w_dlieb = %.3f, w_dnorm = %.3f, w_rscaled_dnorm = %.3f, w_sqrtrscaled_norm = %.3f, w_rtimes_scaled_norm = %.3f, w_rsqr_scaled_norm = %.3f", args.w_dvext, args.w_du, args.w_lieb,args.w_norm, args.w_rscaled_norm, args.w_sqrtrscaled_norm, args.w_rtimes_scaled_norm, args.w_rsqr_scaled_norm)
+
+    logger.info("ref_projInitial weights: w_ref_proj_dnorm = %.3f, w_ref_proj_rscaled_dnorm = %.3f, w_ref_proj_sqrtrscaled_norm = %.3f, w_ref_proj_rtimes_scaled_norm = %.3f, w_ref_proj_rsqr_scaled_norm = %.3f",
+                args.w_ref_proj_norm, args.w_ref_proj_rscaled_norm, args.w_ref_proj_sqrtrscaled_norm, args.w_ref_proj_rtimes_scaled_norm, args.w_ref_proj_rsqr_scaled_norm)
     # Build x0
     if args.mode == "even_tempered":
         # Parse & clamp inputs

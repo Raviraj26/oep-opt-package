@@ -10,7 +10,7 @@ def eval_s_ovrlp_penalty(phase, logger, sc, first_eig_of_S, expo, coeff):
     if log_first_eig_of_S <= expo:
         return sc
     elif log_first_eig_of_S > expo:
-        s_ovrlp_penalty = coeff * ( log_first_eig_of_S - expo ) ** 2
+        s_ovrlp_penalty = coeff * ( log_first_eig_of_S - expo ) ** 4
         if phase == "log":
             logger.info("Penalty for small e_val of S %s", s_ovrlp_penalty)
         return sc + s_ovrlp_penalty
@@ -58,11 +58,25 @@ def negative_exps_penalty(exps):
             penalty = penalty + 1.0 * (exps[i])**(-4)
     return penalty
 
-def score_from_metrics(exps_desc: Sequence[float], metrics: Dict[str, Optional[float]], weights: Weights,
+def get_normalised_metrics(seed_metrics, metrics):
+    normalised_metrics = {}
+    list_to_normalise = ["dnorm", "rscaled_dnorm", "sqrtrscaled_dnorm","rtimes_scaled_dnorm","rsqr_scaled_dnorm",
+                         "ref_proj_dnorm", "ref_proj_rscaled_dnorm", "ref_proj_sqrtrscaled_dnorm", "ref_proj_rtimes_scaled_dnorm", "ref_proj_rsqr_scaled_dnorm"]
+    for key in list_to_normalise:
+        seed_val = seed_metrics.get(key)
+        current_val = metrics.get(key)
+        if seed_val is not None and current_val is not None and seed_val != 0.0:
+            normalised_metrics[key] = current_val / seed_val
+        else:
+            normalised_metrics[key] = None
+    return normalised_metrics
+
+def score_from_metrics(exps: Sequence[float], metrics: Dict[str, Optional[float]], weights: Weights,
                         s_ovrlp_penalty: S_ovrlp_penalty, redundancy_penalty: Redundancy_penalty, a_coupling_penalty: A_coupling_penalty,
                         fail_penalty: float = 1e6, phase ="log") -> float:
-    dv, du, dlieb, dnorm, rscaled_dnorm, sqrtrscaled_dnorm, rtimes_scaled_dnorm, rsqr_scaled_dnorm = (metrics.get(k) for k in ("dvext", "du", "dlieb", "dnorm", "rscaled_dnorm", "sqrtrscaled_dnorm", "rtimes_scaled_dnorm","rsqr_scaled_dnorm"))
-    
+    dv, du, dlieb = (metrics.get(k) for k in ("dvext", "du", "dlieb"))
+    dnorm, rscaled_dnorm, sqrtrscaled_dnorm, rtimes_scaled_dnorm, rsqr_scaled_dnorm = (metrics.get(k) for k in ("dnorm", "rscaled_dnorm", "sqrtrscaled_dnorm", "rtimes_scaled_dnorm","rsqr_scaled_dnorm"))
+    ref_proj_dnorm, ref_proj_rscaled_dnorm, ref_proj_sqrtrscaled_dnorm, ref_proj_rtimes_scaled_dnorm, ref_proj_rsqr_scaled_dnorm = (metrics.get(k) for k in ("ref_proj_dnorm", "ref_proj_rscaled_dnorm", "ref_proj_sqrtrscaled_dnorm", "ref_proj_rtimes_scaled_dnorm", "ref_proj_rsqr_scaled_dnorm"))
     logger = logging.getLogger("oep-opt") if phase == "log" else logging.getLogger("oep-opt.grad")
     terms = []
     if dv is not None:    terms.append(weights.w_dvext * abs(dv))
@@ -73,6 +87,12 @@ def score_from_metrics(exps_desc: Sequence[float], metrics: Dict[str, Optional[f
     if sqrtrscaled_dnorm is not None: terms.append(weights.w_sqrtrscaled_norm  * abs(sqrtrscaled_dnorm))
     if rtimes_scaled_dnorm is not None: terms.append(weights.w_rtimes_scaled_norm  * abs(rtimes_scaled_dnorm))
     if rsqr_scaled_dnorm is not None: terms.append(weights.w_rsqr_scaled_norm  * abs(rsqr_scaled_dnorm))
+    if ref_proj_dnorm is not None: terms.append(weights.w_ref_proj_norm  * abs(ref_proj_dnorm))
+    if ref_proj_rscaled_dnorm is not None: terms.append(weights.w_ref_proj_rscaled_norm  * abs(ref_proj_rscaled_dnorm))
+    if ref_proj_sqrtrscaled_dnorm is not None: terms.append(weights.w_ref_proj_sqrtrscaled_norm  * abs(ref_proj_sqrtrscaled_dnorm))
+    if ref_proj_rtimes_scaled_dnorm is not None: terms.append(weights.w_ref_proj_rtimes_scaled_norm  * abs(ref_proj_rtimes_scaled_dnorm))
+    if ref_proj_rsqr_scaled_dnorm is not None: terms.append(weights.w_ref_proj_rsqr_scaled_norm  *  abs(ref_proj_rsqr_scaled_dnorm))
+
     first_eig_of_S = metrics.get("first_eig_of_S")
     #first_eig_of_A = metrics.get("first_eig_of_A")
     opt_first_eig_of_A = metrics.get("opt_first_eig_of_A")
@@ -89,7 +109,7 @@ def score_from_metrics(exps_desc: Sequence[float], metrics: Dict[str, Optional[f
             logger.info("Total score with s_overlp penalty: %.12f", sc)
     
     if redundancy_penalty.knob:
-        sc = eval_redundancy_penalty(phase, logger, sc, exps_desc, redundancy_penalty.a,redundancy_penalty.b,redundancy_penalty.c)
+        sc = eval_redundancy_penalty(phase, logger, sc, exps, redundancy_penalty.a,redundancy_penalty.b,redundancy_penalty.c)
         if phase == "log":
             logger.info("Total score with redundancy penalty: %.12f", sc)
     

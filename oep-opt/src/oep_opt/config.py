@@ -12,6 +12,11 @@ class Weights:
     w_rtimes_scaled_norm: float = 1.0
     w_sqrtrscaled_norm: float = 1.0
     w_rsqr_scaled_norm: float = 1.0
+    w_ref_proj_norm: float = 1.0
+    w_ref_proj_rscaled_norm: float = 1.0
+    w_ref_proj_rtimes_scaled_norm: float = 1.0
+    w_ref_proj_sqrtrscaled_norm: float = 1.0
+    w_ref_proj_rsqr_scaled_norm: float = 1.0
     penalty_noconv: float = 0.0
 
 @dataclass

@@ -15,6 +15,7 @@ from .io_utils import format_exps_for_molpro, write_input_file, stage_dm_as_link
 from .slurm import run_molpro_via_slurm
 from .parsing import parse_metrics
 from .scoring import score_from_metrics
+from .scoring import get_normalised_metrics
 from .utils import stable_tag_from_theta
 from .scoring import negative_exps_penalty
 
@@ -82,13 +83,20 @@ def objective(theta: np.ndarray, cfg: JobConfig, phase = "log") -> float:
     #        if phase == "log":
     #            logger.info("Penalty for negative exps %s", sc)
     #        return sc
-
+    init_run = True
     rc, out_text = run_molpro_via_slurm(cfg.run_sh_path, rundir,
                                         sbatch_cmd=cfg.sbatch_cmd,
                                         poll_s=cfg.poll_s,
                                         max_wait_s=cfg.max_wait_s)
 
+
     metrics = parse_metrics(out_text, phase=phase)
+    if init_run and metrics["converged"] == True:
+        init_run = False
+        seed_metrics = metrics
+        #logger.info("Initial run converged. Metrics: %s", seed_metrics)
+    normalised_metrics = get_normalised_metrics(seed_metrics, metrics)
+    logger_file.info("Normalised metrics: %s", ", ".join(f"{k}={v:.4f}" for k, v in normalised_metrics.items() if v is not None))
     sc = score_from_metrics(exps ,metrics, cfg.weights, cfg.s_ovrlp_penalty,cfg.redundancy_penalty, cfg.a_coupling_penalty,phase=phase)
     
     if phase == "log":
