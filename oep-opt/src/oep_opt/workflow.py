@@ -15,7 +15,7 @@ from .io_utils import format_exps_for_molpro, write_input_file, stage_dm_as_link
 from .slurm import run_molpro_via_slurm
 from .parsing import parse_metrics
 from .scoring import score_from_metrics
-from .scoring import get_normalised_metrics
+from .scoring import get_normalised_metrics, load_or_save_seed_metrics
 from .utils import stable_tag_from_theta
 from .scoring import negative_exps_penalty
 
@@ -91,13 +91,15 @@ def objective(theta: np.ndarray, cfg: JobConfig, phase = "log") -> float:
 
 
     metrics = parse_metrics(out_text, phase=phase)
-    if init_run and metrics["converged"] == True:
-        init_run = False
-        seed_metrics = metrics
+    if metrics.get("converged"):
+        seed_metrics = load_or_save_seed_metrics(cfg, metrics, logger_file)
+    #if init_run and metrics["converged"] == True:
+    #    init_run = False
+    #    seed_metrics = metrics
         #logger.info("Initial run converged. Metrics: %s", seed_metrics)
     normalised_metrics = get_normalised_metrics(seed_metrics, metrics)
     logger_file.info("Normalised metrics: %s", ", ".join(f"{k}={v:.4f}" for k, v in normalised_metrics.items() if v is not None))
-    sc = score_from_metrics(exps ,metrics, cfg.weights, cfg.s_ovrlp_penalty,cfg.redundancy_penalty, cfg.a_coupling_penalty,phase=phase)
+    sc = score_from_metrics(exps ,normalised_metrics, cfg.weights, cfg.s_ovrlp_penalty,cfg.redundancy_penalty, cfg.a_coupling_penalty,phase=phase)
     
     if phase == "log":
         logger_file.info("The score which is considered is %s", sc)

@@ -208,13 +208,13 @@ def main(argv=None):
             )
 
         if args.method in {"L-BFGS-B", "TNC"}:
-            bounds = [(1e-12, None)] * len(x0)
+            #bounds = [(None, None)] * len(x0)
             res = minimize(
                 fun=fun_wrapped,
                 x0=x0,
                 method="L-BFGS-B",
                 jac=jac_wrapped,
-                bounds=bounds,
+                #bounds=bounds,
                 options={"maxiter": args.maxiter, "disp": True, "gtol": args.gtol, "eps": args.eps}
                 if args.method in {"BFGS", "CG", "Newton-CG", "L-BFGS-B", "TNC"}
                 else {"maxiter": args.maxiter, "disp": True},
