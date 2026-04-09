@@ -30,6 +30,30 @@ def eval_a_coupling_penalty(phase, logger, sc, first_eig_of_A, expo, coeff):
         if phase == "log":
             logger.info("Penalty for small e_val of A %s", a_coupling_penalty)
         return sc + a_coupling_penalty
+
+
+def eval_logdet_penalty(phase, logger, sc, all_eig_of_A, coeff, P0):
+    """
+    Log-determinant barrier: penalty = coeff * (-ln det A) / P0
+    
+    all_eig_of_A : list/array of all A^{III} eigenvalues
+    coeff        : penalty strength (equals penalty value at seed)
+    P0           : -ln(det A) at seed, for normalization
+    """
+    eigs = np.array(all_eig_of_A, dtype=np.float64)
+    eigs_safe = np.maximum(eigs, 1e-30)
+    neg_log_det = -np.sum(np.log(eigs_safe))
+    
+    if P0 is not None and abs(P0) > 1e-30:
+        penalty = coeff * neg_log_det / P0
+    else:
+        penalty = coeff * neg_log_det
+    
+    if phase == "log":
+        logger.info("logdet penalty: -ln(det A) = %.6f, P0 = %.6f, "
+                     "normalized penalty = %.6f, lambda_min = %.4e",
+                     neg_log_det, P0 if P0 else 0.0, penalty, eigs[0])
+    return sc + penalty
     
 def eval_redundancy_penalty(phase,logger, sc, exps_desc, a, b, c):
     exps_list = list(exps_desc)
@@ -99,6 +123,11 @@ def load_or_save_seed_metrics(cfg: JobConfig, metrics: dict,
         return seed
     # First successful run — write to disk
     seed = {k: metrics[k] for k in _NORM_KEYS if metrics.get(k) is not None}
+    # Store logdet P0 for normalization of log-determinant penalty
+    all_eig = metrics.get("all_eig_of_A")
+    if all_eig is not None:
+        eigs = np.array(all_eig, dtype=np.float64)
+        seed["logdet_P0"] = float(-np.sum(np.log(np.maximum(eigs, 1e-30))))
     with open(seed_path, "w") as fh:
         json.dump(seed, fh, indent=2)
     logger_file.info("Seed metrics saved to %s: %s", seed_path,
@@ -107,7 +136,7 @@ def load_or_save_seed_metrics(cfg: JobConfig, metrics: dict,
 
 def score_from_metrics(exps: Sequence[float], metrics: Dict[str, Optional[float]], weights: Weights,
                         s_ovrlp_penalty: S_ovrlp_penalty, redundancy_penalty: Redundancy_penalty, a_coupling_penalty: A_coupling_penalty,
-                        fail_penalty: float = 1e6, phase ="log") -> float:
+                        fail_penalty: float = 1e6, phase ="log", seed_metrics: Optional[Dict] = None) -> float:
     dv, du, dlieb = (metrics.get(k) for k in ("dvext", "du", "dlieb"))
     dnorm, rscaled_dnorm, sqrtrscaled_dnorm, rtimes_scaled_dnorm, rsqr_scaled_dnorm = (metrics.get(k) for k in ("dnorm", "rscaled_dnorm", "sqrtrscaled_dnorm", "rtimes_scaled_dnorm","rsqr_scaled_dnorm"))
     ref_proj_dnorm, ref_proj_rscaled_dnorm, ref_proj_sqrtrscaled_dnorm, ref_proj_rtimes_scaled_dnorm, ref_proj_rsqr_scaled_dnorm = (metrics.get(k) for k in ("ref_proj_dnorm", "ref_proj_rscaled_dnorm", "ref_proj_sqrtrscaled_dnorm", "ref_proj_rtimes_scaled_dnorm", "ref_proj_rsqr_scaled_dnorm"))
@@ -148,7 +177,19 @@ def score_from_metrics(exps: Sequence[float], metrics: Dict[str, Optional[float]
             logger.info("Total score with redundancy penalty: %.12f", sc)
     
     if a_coupling_penalty.knob:
-        sc = eval_a_coupling_penalty(phase, logger, sc, opt_first_eig_of_A, a_coupling_penalty.expo, a_coupling_penalty.coeff)
+        if a_coupling_penalty.penalty_type == "logdet":
+            all_eig = metrics.get("all_eig_of_A")
+            if all_eig is not None:
+                P0 = seed_metrics.get("logdet_P0") if seed_metrics else None
+                sc = eval_logdet_penalty(phase, logger, sc, all_eig,
+                                         a_coupling_penalty.coeff, P0)
+            else:
+                if phase == "log":
+                    logger.warning("all_eig_of_A is None — cannot compute logdet penalty. "
+                                   "Ensure VERB,3 is set in KSINV input.")
+        else:
+            sc = eval_a_coupling_penalty(phase, logger, sc, opt_first_eig_of_A,
+                                          a_coupling_penalty.expo, a_coupling_penalty.coeff)
         if phase == "log":
             logger.info("Total score with A coupling penalty: %.12f", sc)
 

@@ -30,6 +30,7 @@ class A_coupling_penalty:
     expo: float = 2.0
     coeff: float = 1e-4
     knob: bool = False
+    penalty_type: str = "quartic"  # "quartic" (old) or "logdet" (new)
 
 
 @dataclass
@@ -72,4 +73,3 @@ class JobConfig:
     exp_max: float = 1e6
     order_penalty: float = 0.0
     logging: bool = True
-

@@ -59,6 +59,9 @@ def main(argv=None):
     p.add_argument("--a_coupling_penalty_expo", type = float, default = 2.0)
     p.add_argument("--a_coupling_penalty_coeff", type = float, default = 1e-4)
     p.add_argument("--knob_for_a_coupling_penalty", type = str2bool, default = False)
+    p.add_argument("--a_coupling_penalty_type", type=str, default="quartic",
+                   choices=["quartic", "logdet"],
+                   help="'quartic' = old (-log10(lam_min))^4; 'logdet' = -ln(det A) barrier")
     ## Redundancy Penalty for s exponents
     p.add_argument("--redundancy_penalty_coeff_a", type = float, default = 1.1)
     p.add_argument("--redundancy_penalty_coeff_b", type = float, default = 10.0)
@@ -112,7 +115,7 @@ def main(argv=None):
                       w_ref_proj_rtimes_scaled_norm=args.w_ref_proj_rtimes_scaled_norm,
                       w_ref_proj_rsqr_scaled_norm=args.w_ref_proj_rsqr_scaled_norm)
     s_ovrlp_penalty = S_ovrlp_penalty(coeff=args.s_ovrlp_penalty_coeff, expo = args.s_ovrlp_penalty_expo, knob = args.knob_for_s_ovrlp_penalty)
-    a_coupling_penalty = A_coupling_penalty(coeff = args.a_coupling_penalty_coeff, expo = args.a_coupling_penalty_expo, knob = args.knob_for_a_coupling_penalty)
+    a_coupling_penalty = A_coupling_penalty(coeff = args.a_coupling_penalty_coeff, expo = args.a_coupling_penalty_expo, knob = args.knob_for_a_coupling_penalty, penalty_type = args.a_coupling_penalty_type)
     
     redundancy_penalty = Redundancy_penalty(a = args.redundancy_penalty_coeff_a, b = args.redundancy_penalty_coeff_b, c = args.redundancy_penalty_coeff_c, knob = args.redundancy_penalty_knob)
     cfg = JobConfig(
@@ -136,7 +139,7 @@ def main(argv=None):
     logger.info("Minimization parameters: method=%s, maxiter=%d, gtol=%.3e, eps=%.3e",
                 args.method, args.maxiter, args.gtol, args.eps)
     logger.info("S_overlap penalty parameters expo=%s, coeff=%s, knob=%s", s_ovrlp_penalty.expo, s_ovrlp_penalty.coeff, s_ovrlp_penalty.knob)
-    logger.info("A_coupling penalty parameters expo=%s, coeff=%s, knob=%s", a_coupling_penalty.expo, a_coupling_penalty.coeff, a_coupling_penalty.knob)
+    logger.info("A_coupling penalty parameters expo=%s, coeff=%s, knob=%s, type=%s", a_coupling_penalty.expo, a_coupling_penalty.coeff, a_coupling_penalty.knob, a_coupling_penalty.penalty_type)
     logger.info("Redundancy penalty parameters a=%s,b=%s,c=%s, knob=%s",redundancy_penalty.a, redundancy_penalty.b, redundancy_penalty.c, redundancy_penalty.knob)
     logger.info("Initial weights: w_dvext = %.3f, w_du = %.3f, w_dlieb = %.3f, w_dnorm = %.3f, w_rscaled_dnorm = %.3f, w_sqrtrscaled_norm = %.3f, w_rtimes_scaled_norm = %.3f, w_rsqr_scaled_norm = %.3f", args.w_dvext, args.w_du, args.w_lieb,args.w_norm, args.w_rscaled_norm, args.w_sqrtrscaled_norm, args.w_rtimes_scaled_norm, args.w_rsqr_scaled_norm)
 

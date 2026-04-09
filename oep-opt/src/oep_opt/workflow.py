@@ -98,8 +98,8 @@ def objective(theta: np.ndarray, cfg: JobConfig, phase = "log") -> float:
     #    seed_metrics = metrics
         #logger.info("Initial run converged. Metrics: %s", seed_metrics)
     normalised_metrics = get_normalised_metrics(seed_metrics, metrics)
-    logger_file.info("Normalised metrics: %s", ", ".join(f"{k}={v:.4f}" for k, v in normalised_metrics.items() if v is not None))
-    sc = score_from_metrics(exps ,normalised_metrics, cfg.weights, cfg.s_ovrlp_penalty,cfg.redundancy_penalty, cfg.a_coupling_penalty,phase=phase)
+    logger_file.info("Normalised metrics: %s", ", ".join(f"{k}={v:.4f}" for k, v in normalised_metrics.items() if v is not None and isinstance(v, (int, float))))
+    sc = score_from_metrics(exps ,normalised_metrics, cfg.weights, cfg.s_ovrlp_penalty,cfg.redundancy_penalty, cfg.a_coupling_penalty,phase=phase, seed_metrics=seed_metrics)
     
     if phase == "log":
         logger_file.info("The score which is considered is %s", sc)

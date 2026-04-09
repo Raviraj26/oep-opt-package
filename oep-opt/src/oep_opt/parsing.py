@@ -96,6 +96,38 @@ def parse_last_first_eigA_from_lines(out_text: str, patterns: Iterable[str]) -> 
     return last_val
 
 
+def parse_last_all_eigA(out_text: str) -> Optional[List[float]]:
+    """
+    Parse ALL eigenvalue blocks of A^{III}-matrix in the Molpro output,
+    return eigenvalues from the LAST block (= converged KSINV iteration)
+    as a plain list of floats (ascending order).
+    Requires VERB,3 or higher in the KSINV input block.
+    """
+    import numpy as _np
+    block_pat = re.compile(
+        r"Eigenvalues of A\^\{III\}-matrix\s*\n"
+        r"\s*-+\s*\n"
+        r"((?:\s*\d+\s+[+-]?\d+\.\d+[EeDd][+-]?\d+\s+[TF]\s*\n)+)",
+        re.IGNORECASE,
+    )
+    line_pat = re.compile(
+        r"\s*(\d+)\s+([+-]?\d+\.\d+[EeDd][+-]?\d+)\s+([TF])"
+    )
+    last_block = None
+    for m in block_pat.finditer(out_text):
+        last_block = m.group(1)
+    if last_block is None:
+        return None
+    eigs = []
+    for m in line_pat.finditer(last_block):
+        val = float(m.group(2).replace("D", "E").replace("d", "e"))
+        eigs.append(val)
+    if not eigs:
+        return None
+    eigs.sort()
+    return eigs
+
+
 def parse_metrics(out_text: str, phase = "log") -> Dict[str, Optional[float]]:
     dvext = _first_float(out_text, DEFAULT_PATTERNS["dvext"])
     du    = _first_float(out_text, DEFAULT_PATTERNS["du"])
@@ -114,6 +146,7 @@ def parse_metrics(out_text: str, phase = "log") -> Dict[str, Optional[float]]:
     first_eig_of_S = parse_first_eig_of_S(out_text, DEFAULT_PATTERNS["s_ovrlp"])
     first_eig_of_A = parse_first_eig_of_S(out_text, DEFAULT_PATTERNS["a_matrix"])
     opt_first_eig_of_A = parse_last_first_eigA_from_lines(out_text, DEFAULT_PATTERNS["a_matrix"])
+    all_eig_of_A = parse_last_all_eigA(out_text)
     logger = logging.getLogger("oep-opt") if phase == "log" else logging.getLogger("oep-opt.grad")
 #    if logging:
     if phase == "log":
@@ -124,9 +157,14 @@ def parse_metrics(out_text: str, phase = "log") -> Dict[str, Optional[float]]:
         logger.info("First eigen value of S is %s",first_eig_of_S)
         logger.info("First eigen value of A is %s",first_eig_of_A)
         logger.info("OPT First eigen value of A is %s",opt_first_eig_of_A)
+        if all_eig_of_A is not None:
+            logger.info("All A^{III} eigenvalues: %s", ", ".join(f"{v:.6e}" for v in all_eig_of_A))
+        else:
+            logger.info("All A^{III} eigenvalues: None (VERB>=3 required)")
     #print(f"[DEBUG] Parsed metrics: dvext={dvext}, du={du}, dlieb={dlieb}, dnorm={dnorm}, converged={conv}")
     return {"dvext": dvext, "du": du, "dlieb": dlieb,
              "dnorm": dnorm, "rscaled_dnorm": rscaled_dnorm, "sqrtrscaled_dnorm": sqrtrscaled_dnorm,"rtimes_scaled_dnorm": rtimes_scaled_dnorm,"rsqr_scaled_dnorm": rsqr_scaled_dnorm,
              "ref_proj_dnorm": ref_proj_dnorm, "ref_proj_rscaled_dnorm": ref_proj_rscaled_dnorm, "ref_proj_sqrtrscaled_dnorm": ref_proj_sqrtrscaled_dnorm,
              "ref_proj_rtimes_scaled_dnorm": ref_proj_rtimes_scaled_dnorm, "ref_proj_rsqr_scaled_dnorm": ref_proj_rsqr_scaled_dnorm,
-             "converged": conv, "first_eig_of_S": first_eig_of_S, "first_eig_of_A": first_eig_of_A, "opt_first_eig_of_A": opt_first_eig_of_A}
+             "converged": conv, "first_eig_of_S": first_eig_of_S, "first_eig_of_A": first_eig_of_A,
+             "opt_first_eig_of_A": opt_first_eig_of_A, "all_eig_of_A": all_eig_of_A}
