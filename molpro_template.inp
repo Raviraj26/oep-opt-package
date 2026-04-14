@@ -1,0 +1,29 @@
+gdirect
+
+gprint,basis
+basis={
+default,@ORBITAL_PARENT@
+set,dfit;default,aug-cc-pwCV5Z/mp2fit
+set,oep
+!pdf,@ELEM@,@AUX_PARENT@
+s,@ELEM@,@S_EXP_LINE@
+}
+
+symmetry,nosym
+angstrom
+geometry={
+1
+
+  @ELEM@   0.000000   0.000000   0.000000
+}
+
+charge=@CHARGE@
+spin=@SPIN@
+
+{matrop;import,2140.2,file=dm.dat}
+
+df-ks,lda,maxit=0,df_basis=dfit
+{cfit,basis_coul=dfit,basis_exch=dfit}
+acfd;ksinv,maxit=99,dfit=1,refden=2140.2,e_ref=@E_REF@,space_sym=1,thr_fai_oep=1d-99,nplot_z=1,plot_vxc=1,plot_vref=1,gridsize=12000,plotrange=7,thr_inversion=1e-8,\
+density_test=1, noa=@ALPHA_OCC@, nob=@BETA_OCC@, verb=3, r_dnormcutoff=@R_DNORMCUTOFF@,\
+do_radial_grid=1, radial_grid_start = -10, radial_grid_end = 4, grid_points_per_decade = 80

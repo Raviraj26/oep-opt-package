@@ -51,6 +51,9 @@ def main(argv=None):
     p.add_argument("--w-ref-proj-sqrtrscaled-norm", type=float, default=1.0)
     p.add_argument("--w-ref-proj-rtimes-scaled-norm", type=float, default=1.0)
 
+    p.add_argument("--parsing_type", type=str, default="L2",
+                   choices=["L2", "L1"],
+                   help="'L2' = L2 norm; 'L1' = L1 norm")
     ## S_overlap_penalty
     p.add_argument("--s_ovrlp_penalty_expo", type = float, default = 9.0)
     p.add_argument("--s_ovrlp_penalty_coeff", type = float, default = 1e-3)
@@ -126,7 +129,7 @@ def main(argv=None):
         template_text=template_text, workroot=Path(args.workdir), run_sh_path=Path(args.run_sh),
         mode=args.mode, K=args.K, weights=weights, s_ovrlp_penalty=s_ovrlp_penalty,redundancy_penalty=redundancy_penalty,
         a_coupling_penalty = a_coupling_penalty, sbatch_cmd=args.sbatch_cmd, poll_s=args.poll_s, max_wait_s=args.max_wait_s,
-        exp_min=1e-6, exp_max=1e6, order_penalty=float(args.order_penalty), logging=True
+        exp_min=1e-6, exp_max=1e6, order_penalty=float(args.order_penalty), logging=True, parsing_type=args.parsing_type
     )
 
     rundir = cfg.workroot
@@ -141,6 +144,7 @@ def main(argv=None):
     logger.info("S_overlap penalty parameters expo=%s, coeff=%s, knob=%s", s_ovrlp_penalty.expo, s_ovrlp_penalty.coeff, s_ovrlp_penalty.knob)
     logger.info("A_coupling penalty parameters expo=%s, coeff=%s, knob=%s, type=%s", a_coupling_penalty.expo, a_coupling_penalty.coeff, a_coupling_penalty.knob, a_coupling_penalty.penalty_type)
     logger.info("Redundancy penalty parameters a=%s,b=%s,c=%s, knob=%s",redundancy_penalty.a, redundancy_penalty.b, redundancy_penalty.c, redundancy_penalty.knob)
+    logger.info("Parsing type for metrics: %s", cfg.parsing_type)
     logger.info("Initial weights: w_dvext = %.3f, w_du = %.3f, w_dlieb = %.3f, w_dnorm = %.3f, w_rscaled_dnorm = %.3f, w_sqrtrscaled_norm = %.3f, w_rtimes_scaled_norm = %.3f, w_rsqr_scaled_norm = %.3f", args.w_dvext, args.w_du, args.w_lieb,args.w_norm, args.w_rscaled_norm, args.w_sqrtrscaled_norm, args.w_rtimes_scaled_norm, args.w_rsqr_scaled_norm)
 
     logger.info("ref_projInitial weights: w_ref_proj_dnorm = %.3f, w_ref_proj_rscaled_dnorm = %.3f, w_ref_proj_sqrtrscaled_norm = %.3f, w_ref_proj_rtimes_scaled_norm = %.3f, w_ref_proj_rsqr_scaled_norm = %.3f",

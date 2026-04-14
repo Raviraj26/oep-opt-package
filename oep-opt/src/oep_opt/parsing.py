@@ -18,7 +18,7 @@ import logging
 #    "s_ovrlp": [r"(?is)Eigenvalues of S\^I-matrix.*?\n[-\s]*\n\s*1\s+(?:\s*)?([+-]?(?:\d+(?:\.\d*)?|\.\d+)(?:[EeDd][+-]?\d+)?)"],
 #    "a_matrix": [r"(?is)Eigenvalues of A\^\{III\}-matrix.*?\n[-\s]*\n\s*1\s+(?:\s*)?([+-]?(?:\d+(?:\.\d*)?|\.\d+)(?:[EeDd][+-]?\d+)?)"],
 #}
-DEFAULT_PATTERNS: Dict[str, list[str]] = {
+DEFAULT_PATTERNS_L1: Dict[str, list[str]] = {
     "dvext": [r"(?m)^\s*KSINV\s+External\s+energy\s+error\s+([+-]?\d+(?:\.\d+)?(?:[Ee][+-]?\d+)?)"],
     "du":    [r"(?m)^\s*KSINV\s+Hartree\s+energy\s+error\s+([+-]?\d+(?:\.\d+)?(?:[Ee][+-]?\d+)?)"],
     "dlieb": [r"(?m)^\s*KSINV\s+Lieb\s+error\s+([+-]?\d+(?:\.\d+)?(?:[Ee][+-]?\d+)?)"],
@@ -32,6 +32,25 @@ DEFAULT_PATTERNS: Dict[str, list[str]] = {
     "ref_proj_sqrtrscaled_dnorm": [r"(?im)^\s*radial\s+86\s+directions\s+for\s+ref_proj_den_oep\s+Without_R_cutoff_SYMMETRIZED\s+sqrtrscaled\s+([+-]?(?:\d+(?:\.\d*)?|\.\d+)(?:[EeDd][+-]?\d+)?)"],
     "ref_proj_rtimes_scaled_dnorm": [r"(?im)^\s*radial\s+86\s+directions\s+for\s+ref_proj_den_oep\s+Without_R_cutoff_SYMMETRIZED\s+rtimes\s+([+-]?(?:\d+(?:\.\d*)?|\.\d+)(?:[EeDd][+-]?\d+)?)"],
     "ref_proj_rsqr_scaled_dnorm": [r"(?im)^\s*radial\s+86\s+directions\s+for\s+ref_proj_den_oep\s+Without_R_cutoff_SYMMETRIZED\s+rsqrscaled\s+([+-]?(?:\d+(?:\.\d*)?|\.\d+)(?:[EeDd][+-]?\d+)?)"],
+    "converged": [r"(?im)^\s*SCF\s+Converged\s"],
+    "not_converged": [r"(?im)^\s*SCF\s+NOT\s+Converged\s"],
+    "s_ovrlp": [r"(?is)Eigenvalues of S\^I-matrix.*?\n[-\s]*\n\s*1\s+(?:\s*)?([+-]?(?:\d+(?:\.\d*)?|\.\d+)(?:[EeDd][+-]?\d+)?)"],
+    "a_matrix": [r"(?is)Eigenvalues of A\^\{III\}-matrix.*?\n[-\s]*\n\s*1\s+(?:\s*)?([+-]?(?:\d+(?:\.\d*)?|\.\d+)(?:[EeDd][+-]?\d+)?)"],
+}
+DEFAULT_PATTERNS_L2: Dict[str, list[str]] = {
+    "dvext": [r"(?m)^\s*KSINV\s+External\s+energy\s+error\s+([+-]?\d+(?:\.\d+)?(?:[Ee][+-]?\d+)?)"],
+    "du":    [r"(?m)^\s*KSINV\s+Hartree\s+energy\s+error\s+([+-]?\d+(?:\.\d+)?(?:[Ee][+-]?\d+)?)"],
+    "dlieb": [r"(?m)^\s*KSINV\s+Lieb\s+error\s+([+-]?\d+(?:\.\d+)?(?:[Ee][+-]?\d+)?)"],
+    "dnorm": [r"(?im)^\s*radial\s+86\s+directions\s+using\s+sqr\s+norm\s+dnorm\s+([+-]?(?:\d+(?:\.\d*)?|\.\d+)(?:[EeDd][+-]?\d+)?)"],
+    "rscaled_dnorm": [r"(?im)^\s*radial\s+86\s+directions\s+using\s+sqr\s+norm\s+Without_R_cutoff_SYMMETRIZED\s+rscaled\s+([+-]?(?:\d+(?:\.\d*)?|\.\d+)(?:[EeDd][+-]?\d+)?)"],
+    "sqrtrscaled_dnorm": [r"(?im)^\s*radial\s+86\s+directions\s+using\s+sqr\s+norm\s+Without_R_cutoff_SYMMETRIZED\s+sqrtrscaled\s+([+-]?(?:\d+(?:\.\d*)?|\.\d+)(?:[EeDd][+-]?\d+)?)"],
+    "rtimes_scaled_dnorm": [r"(?im)^\s*radial\s+86\s+directions\s+using\s+sqr\s+norm\s+Without_R_cutoff_SYMMETRIZED\s+rtimes\s+([+-]?(?:\d+(?:\.\d*)?|\.\d+)(?:[EeDd][+-]?\d+)?)"],
+    "rsqr_scaled_dnorm": [r"(?im)^\s*radial\s+86\s+directions\s+using\s+sqr\s+norm\s+Without_R_cutoff_SYMMETRIZED\s+rsqrscaled\s+([+-]?(?:\d+(?:\.\d*)?|\.\d+)(?:[EeDd][+-]?\d+)?)"],
+    "ref_proj_dnorm": [r"(?im)^\s*radial\s+86\s+directions\s+using\s+sqr\s+norm\s+for\s+ref_proj_den_oep\s+dnorm\s+([+-]?(?:\d+(?:\.\d*)?|\.\d+)(?:[EeDd][+-]?\d+)?)"],
+    "ref_proj_rscaled_dnorm": [r"(?im)^\s*radial\s+86\s+directions\s+using\s+sqr\s+norm\s+for\s+ref_proj_den_oep\s+Without_R_cutoff_SYMMETRIZED\s+rscaled\s+([+-]?(?:\d+(?:\.\d*)?|\.\d+)(?:[EeDd][+-]?\d+)?)"],
+    "ref_proj_sqrtrscaled_dnorm": [r"(?im)^\s*radial\s+86\s+directions\s+using\s+sqr\s+norm\s+for\s+ref_proj_den_oep\s+Without_R_cutoff_SYMMETRIZED\s+sqrtrscaled\s+([+-]?(?:\d+(?:\.\d*)?|\.\d+)(?:[EeDd][+-]?\d+)?)"],
+    "ref_proj_rtimes_scaled_dnorm": [r"(?im)^\s*radial\s+86\s+directions\s+using\s+sqr\s+norm\s+for\s+ref_proj_den_oep\s+Without_R_cutoff_SYMMETRIZED\s+rtimes\s+([+-]?(?:\d+(?:\.\d*)?|\.\d+)(?:[EeDd][+-]?\d+)?)"],
+    "ref_proj_rsqr_scaled_dnorm": [r"(?im)^\s*radial\s+86\s+directions\s+using\s+sqr\s+norm\s+for\s+ref_proj_den_oep\s+Without_R_cutoff_SYMMETRIZED\s+rsqrscaled\s+([+-]?(?:\d+(?:\.\d*)?|\.\d+)(?:[EeDd][+-]?\d+)?)"],
     "converged": [r"(?im)^\s*SCF\s+Converged\s"],
     "not_converged": [r"(?im)^\s*SCF\s+NOT\s+Converged\s"],
     "s_ovrlp": [r"(?is)Eigenvalues of S\^I-matrix.*?\n[-\s]*\n\s*1\s+(?:\s*)?([+-]?(?:\d+(?:\.\d*)?|\.\d+)(?:[EeDd][+-]?\d+)?)"],
@@ -128,24 +147,30 @@ def parse_last_all_eigA(out_text: str) -> Optional[List[float]]:
     return eigs
 
 
-def parse_metrics(out_text: str, phase = "log") -> Dict[str, Optional[float]]:
-    dvext = _first_float(out_text, DEFAULT_PATTERNS["dvext"])
-    du    = _first_float(out_text, DEFAULT_PATTERNS["du"])
-    dlieb = _first_float(out_text, DEFAULT_PATTERNS["dlieb"])
-    dnorm = _first_float(out_text, DEFAULT_PATTERNS["dnorm"])
-    rscaled_dnorm = _first_float(out_text, DEFAULT_PATTERNS["rscaled_dnorm"])
-    sqrtrscaled_dnorm = _first_float(out_text, DEFAULT_PATTERNS["sqrtrscaled_dnorm"])
-    rtimes_scaled_dnorm = _first_float(out_text, DEFAULT_PATTERNS["rtimes_scaled_dnorm"])
-    rsqr_scaled_dnorm = _first_float(out_text, DEFAULT_PATTERNS["rsqr_scaled_dnorm"])
-    ref_proj_dnorm = _first_float(out_text, DEFAULT_PATTERNS["ref_proj_dnorm"])
-    ref_proj_rscaled_dnorm = _first_float(out_text, DEFAULT_PATTERNS["ref_proj_rscaled_dnorm"])
-    ref_proj_sqrtrscaled_dnorm = _first_float(out_text, DEFAULT_PATTERNS["ref_proj_sqrtrscaled_dnorm"])
-    ref_proj_rtimes_scaled_dnorm = _first_float(out_text, DEFAULT_PATTERNS["ref_proj_rtimes_scaled_dnorm"])
-    ref_proj_rsqr_scaled_dnorm = _first_float(out_text, DEFAULT_PATTERNS["ref_proj_rsqr_scaled_dnorm"])
-    conv  = _detect_conv(out_text, DEFAULT_PATTERNS["converged"], DEFAULT_PATTERNS["not_converged"])
-    first_eig_of_S = parse_first_eig_of_S(out_text, DEFAULT_PATTERNS["s_ovrlp"])
-    first_eig_of_A = parse_first_eig_of_S(out_text, DEFAULT_PATTERNS["a_matrix"])
-    opt_first_eig_of_A = parse_last_first_eigA_from_lines(out_text, DEFAULT_PATTERNS["a_matrix"])
+def parse_metrics(out_text: str, phase = "log", parsing_type = "L2") -> Dict[str, Optional[float]]:
+    if parsing_type == "L1":
+        patterns = DEFAULT_PATTERNS_L1
+    elif parsing_type == "L2":
+        patterns = DEFAULT_PATTERNS_L2
+    else:
+        raise ValueError(f"Unknown parsing type: {parsing_type}")
+    dvext = _first_float(out_text, patterns["dvext"])
+    du    = _first_float(out_text, patterns["du"])
+    dlieb = _first_float(out_text, patterns["dlieb"])
+    dnorm = _first_float(out_text, patterns["dnorm"])
+    rscaled_dnorm = _first_float(out_text, patterns["rscaled_dnorm"])
+    sqrtrscaled_dnorm = _first_float(out_text, patterns["sqrtrscaled_dnorm"])
+    rtimes_scaled_dnorm = _first_float(out_text, patterns["rtimes_scaled_dnorm"])
+    rsqr_scaled_dnorm = _first_float(out_text, patterns["rsqr_scaled_dnorm"])
+    ref_proj_dnorm = _first_float(out_text, patterns["ref_proj_dnorm"])
+    ref_proj_rscaled_dnorm = _first_float(out_text, patterns["ref_proj_rscaled_dnorm"])
+    ref_proj_sqrtrscaled_dnorm = _first_float(out_text, patterns["ref_proj_sqrtrscaled_dnorm"])
+    ref_proj_rtimes_scaled_dnorm = _first_float(out_text, patterns["ref_proj_rtimes_scaled_dnorm"])
+    ref_proj_rsqr_scaled_dnorm = _first_float(out_text, patterns["ref_proj_rsqr_scaled_dnorm"])
+    conv  = _detect_conv(out_text, patterns["converged"], patterns["not_converged"])
+    first_eig_of_S = parse_first_eig_of_S(out_text, patterns["s_ovrlp"])
+    first_eig_of_A = parse_first_eig_of_S(out_text, patterns["a_matrix"])
+    opt_first_eig_of_A = parse_last_first_eigA_from_lines(out_text, patterns["a_matrix"])
     all_eig_of_A = parse_last_all_eigA(out_text)
     logger = logging.getLogger("oep-opt") if phase == "log" else logging.getLogger("oep-opt.grad")
 #    if logging:

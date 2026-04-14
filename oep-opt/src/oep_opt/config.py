@@ -73,3 +73,4 @@ class JobConfig:
     exp_max: float = 1e6
     order_penalty: float = 0.0
     logging: bool = True
+    parsing_type: str = "L2 "  # "L2" or "L1"
