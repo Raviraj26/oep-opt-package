@@ -91,8 +91,8 @@ def objective(theta: np.ndarray, cfg: JobConfig, phase = "log") -> float:
 
 
     metrics = parse_metrics(out_text, phase=phase, parsing_type=cfg.parsing_type)
-    if metrics.get("converged"):
-        seed_metrics = load_or_save_seed_metrics(cfg, metrics, logger_file)
+    #if metrics.get("converged"):
+    seed_metrics = load_or_save_seed_metrics(cfg, metrics, logger_file)
     #if init_run and metrics["converged"] == True:
     #    init_run = False
     #    seed_metrics = metrics
